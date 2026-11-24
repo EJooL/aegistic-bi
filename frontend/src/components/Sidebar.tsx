@@ -1,242 +1,242 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  MessageSquareCode,
-  LayoutDashboard,
-  BookOpenCheck,
+  Terminal,
+  LayoutGrid,
+  BookOpen,
   BarChart3,
   RefreshCw,
   Database,
+  ChevronUp,
+  ChevronDown,
 } from 'lucide-react';
-import type { HealthResponse } from '../lib/api';
+import type { HealthResponse, ParserMode } from '../lib/api';
+import { AegisticLogo } from './AegisticLogo';
 
-export type NavTab = 'ask' | 'dashboard' | 'catalog' | 'benchmark';
+export type NavTab = 'ask' | 'dashboard' | 'metrics' | 'benchmark';
 
 interface SidebarProps {
   activeTab: NavTab;
   onSelectTab: (tab: NavTab) => void;
+  onNavigateHome: () => void;
   health: HealthResponse | null;
   healthLoading: boolean;
   healthError: string | null;
   onRefreshHealth: () => void;
   pinnedCount: number;
+  parserMode: ParserMode | '';
+  onParserModeChange: (mode: ParserMode | '') => void;
 }
 
 const NAV_ITEMS: {
   id: NavTab;
   label: string;
-  subtitle: string;
   icon: React.ComponentType<{ className?: string }>;
 }[] = [
-  {
-    id: 'ask',
-    label: 'Ask Aegistic',
-    subtitle: 'Conversational BI',
-    icon: MessageSquareCode,
-  },
-  {
-    id: 'dashboard',
-    label: 'Live Dashboard',
-    subtitle: 'Pinned insights',
-    icon: LayoutDashboard,
-  },
-  {
-    id: 'catalog',
-    label: 'Metric Catalog',
-    subtitle: 'Metrics-as-code',
-    icon: BookOpenCheck,
-  },
-  {
-    id: 'benchmark',
-    label: 'Evaluation Benchmark',
-    subtitle: 'Baseline vs Aegistic',
-    icon: BarChart3,
-  },
+  { id: 'ask', label: 'Ask Aegistic', icon: Terminal },
+  { id: 'dashboard', label: 'Live Dashboard', icon: LayoutGrid },
+  { id: 'metrics', label: 'Metric Catalog', icon: BookOpen },
+  { id: 'benchmark', label: 'Evaluation Benchmark', icon: BarChart3 },
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   onSelectTab,
+  onNavigateHome,
   health,
   healthLoading,
   healthError,
   onRefreshHealth,
   pinnedCount,
+  parserMode,
+  onParserModeChange,
 }) => {
-  const isOnline = Boolean(health && health.status === 'ok' && health.duckdb_connected);
+  const [infoOpen, setInfoOpen] = useState(false);
+  const popoverRef = useRef<HTMLDivElement>(null);
+
+  const isOnline = Boolean(
+    health && health.status === 'ok' && health.duckdb_connected
+  );
+
+  useEffect(() => {
+    if (!infoOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setInfoOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [infoOpen]);
 
   return (
     <aside
-      className="w-[240px] shrink-0 h-screen sticky top-0 bg-[#FFFFFF] border-r border-[#E2E8F0] flex flex-col justify-between select-none"
-      aria-label="Primary Navigation"
+      className="w-[240px] shrink-0 h-screen sticky top-0 bg-[#FFFFFF] border-r border-[#E5E7EB] flex flex-col justify-between select-none"
+      aria-label="Workspace Navigation"
     >
       <div>
-        {/* Brand Header */}
-        <div className="px-5 py-5 border-b border-[#E2E8F0]">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-[#3B498B] flex items-center justify-center shadow-sm shrink-0">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-              >
-                <path
-                  d="M12 2L4 5.5V11.5C4 16.85 7.41 21.74 12 23C16.59 21.74 20 16.85 20 11.5V5.5L12 2Z"
-                  stroke="#FFFFFF"
-                  strokeWidth="2"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M8.5 12.2L10.9 14.6L15.8 9.5"
-                  stroke="#4DA8E5"
-                  strokeWidth="2.4"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-            <div className="min-w-0">
-              <div className="text-[17px] font-bold text-[#111827] leading-tight tracking-tight">
-                Aegistic
-              </div>
-              <div className="text-[11px] font-medium text-[#526075] tracking-wide uppercase mt-0.5">
-                Verified Semantic BI
-              </div>
-            </div>
-          </div>
+        {/* Clickable Brand Header -> Returns to / */}
+        <div className="px-5 h-[68px] border-b border-[#E5E7EB] flex items-center">
+          <AegisticLogo onClick={onNavigateHome} showSubtitle size="sm" />
         </div>
 
         {/* Navigation Links */}
-        <nav className="p-3 space-y-1">
-          <div className="px-2.5 pb-1.5 pt-1 text-[11px] font-semibold uppercase tracking-wider text-[#526075]">
+        <nav className="py-4">
+          <div className="px-5 pb-2 text-[10.5px] font-mono font-semibold uppercase tracking-[0.1em] text-[#4B5563]">
             Workspace
           </div>
-          {NAV_ITEMS.map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            const badge =
-              item.id === 'dashboard' && pinnedCount > 0
-                ? String(pinnedCount)
-                : item.id === 'catalog' && health?.metrics_loaded
-                  ? String(health.metrics_loaded)
-                  : null;
+          <div className="space-y-0.5">
+            {NAV_ITEMS.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              const count =
+                item.id === 'dashboard' && pinnedCount > 0
+                  ? String(pinnedCount)
+                  : item.id === 'metrics' && health?.metrics_loaded
+                    ? String(health.metrics_loaded)
+                    : null;
 
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => onSelectTab(item.id)}
-                className={`group relative w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left transition-colors focus:outline-none focus:ring-2 focus:ring-[#3B498B]/40 ${
-                  isActive
-                    ? 'bg-[#EEF0FA] text-[#3B498B]'
-                    : 'text-[#1F2937] hover:bg-[#F8FAFC] hover:text-[#111827]'
-                }`}
-              >
-                {isActive && (
-                  <span
-                    className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r bg-[#3B498B]"
-                    aria-hidden="true"
-                  />
-                )}
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <Icon
-                    className={`w-[18px] h-[18px] shrink-0 ${
-                      isActive ? 'text-[#3B498B]' : 'text-[#526075] group-hover:text-[#3B498B]'
-                    }`}
-                  />
-                  <div className="min-w-0">
-                    <div
-                      className={`text-[13.5px] leading-snug truncate ${
-                        isActive ? 'font-semibold text-[#3B498B]' : 'font-medium text-[#1F2937]'
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => onSelectTab(item.id)}
+                  className={`relative w-full flex items-center justify-between pl-5 pr-4 py-2.5 text-left transition-colors focus:outline-none focus:bg-[#F7F8FA] ${
+                    isActive
+                      ? 'bg-[#F7F8FA] text-[#09090B]'
+                      : 'text-[#4B5563] hover:bg-[#F7F8FA] hover:text-[#09090B]'
+                  }`}
+                >
+                  {isActive && (
+                    <span
+                      className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#67689E]"
+                      aria-hidden="true"
+                    />
+                  )}
+                  <span className="flex items-center gap-2.5 min-w-0">
+                    <Icon
+                      className={`w-[16px] h-[16px] shrink-0 ${
+                        isActive ? 'text-[#67689E]' : 'text-[#4B5563]'
+                      }`}
+                    />
+                    <span
+                      className={`text-[13.5px] truncate ${
+                        isActive ? 'font-bold text-[#09090B]' : 'font-medium'
                       }`}
                     >
                       {item.label}
-                    </div>
-                  </div>
-                </div>
-                {badge && (
-                  <span
-                    className={`ml-2 px-1.5 py-0.5 text-[11px] font-semibold rounded-md tabular-nums ${
-                      isActive
-                        ? 'bg-[#3B498B] text-[#FFFFFF]'
-                        : 'bg-[#F1F5F9] text-[#526075]'
-                    }`}
-                  >
-                    {badge}
+                    </span>
                   </span>
-                )}
-              </button>
-            );
-          })}
+                  {count && (
+                    <span className="ml-2 font-mono text-[11px] font-semibold text-[#4B5563] tabular-nums">
+                      {count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </nav>
       </div>
 
-      {/* Live Backend & DuckDB Health Footer */}
-      <div className="p-3 border-t border-[#E2E8F0] bg-[#F8FAFC]/70">
-        <div className="rounded-lg bg-[#FFFFFF] border border-[#E2E8F0] p-3">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <span
-                className={`w-2 h-2 rounded-full shrink-0 ${
-                  healthLoading
-                    ? 'bg-[#4DA8E5] animate-pulse'
-                    : isOnline
-                      ? 'bg-[#4DA8E5]'
-                      : 'bg-[#E11D48]'
-                }`}
-              />
-              <span className="text-[12px] font-semibold text-[#111827]">
-                {healthLoading
-                  ? 'Checking API...'
-                  : isOnline
-                    ? 'Engine Online'
-                    : 'Engine Offline'}
+      {/* Compact Unobtrusive Engine Status + "Engine Info" Popover */}
+      <div className="relative p-3 border-t border-[#E5E7EB]" ref={popoverRef}>
+        {infoOpen && (
+          <div className="absolute left-3 right-3 bottom-[60px] z-30 bg-[#FFFFFF] border border-[#BDC4D0] rounded-md p-3.5 space-y-3">
+            <div className="flex items-center justify-between border-b border-[#E5E7EB] pb-2">
+              <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-[#09090B]">
+                Engine Telemetry
               </span>
+              <button
+                type="button"
+                onClick={onRefreshHealth}
+                title="Refresh backend health"
+                className="p-1 rounded text-[#4B5563] hover:text-[#09090B] hover:bg-[#F7F8FA] transition-colors"
+              >
+                <RefreshCw
+                  className={`w-3.5 h-3.5 ${healthLoading ? 'animate-spin' : ''}`}
+                />
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={onRefreshHealth}
-              title="Refresh backend health"
-              className="p-1 rounded text-[#526075] hover:text-[#3B498B] hover:bg-[#EEF0FA] transition-colors focus:outline-none focus:ring-2 focus:ring-[#3B498B]/40"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${healthLoading ? 'animate-spin' : ''}`} />
-            </button>
-          </div>
 
-          {isOnline && health ? (
-            <div className="space-y-1.5 text-[11.5px] text-[#526075]">
-              <div className="flex items-center justify-between">
-                <span className="flex items-center gap-1.5">
-                  <Database className="w-3 h-3 text-[#4DA8E5]" />
-                  DuckDB Gold
-                </span>
-                <span className="font-semibold text-[#1F2937] tabular-nums">
-                  {health.gold_tables?.length ?? 0} tables
-                </span>
+            {isOnline && health ? (
+              <div className="space-y-2 text-[12px]">
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 text-[#4B5563]">
+                    <Database className="w-3.5 h-3.5 text-[#5BC2F4]" />
+                    DuckDB Gold
+                  </span>
+                  <span className="font-mono font-semibold text-[#09090B] tabular-nums">
+                    {health.gold_tables?.length ?? 0} tables
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[#4B5563]">Semantic Contract</span>
+                  <span className="font-mono font-semibold text-[#09090B] tabular-nums">
+                    {health.metrics_loaded}M · {health.dimensions_loaded}D
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[#4B5563]">Server Parser</span>
+                  <span className="font-mono font-semibold text-[#09090B]">
+                    {health.parser_mode}
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center justify-between">
-                <span>Semantic Model</span>
-                <span className="font-semibold text-[#1F2937] tabular-nums">
-                  {health.metrics_loaded}M · {health.dimensions_loaded}D
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Parser Mode</span>
-                <span className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-[#EBF6FD] text-[#1B6CA8] font-medium">
-                  {health.parser_mode}
-                </span>
-              </div>
+            ) : (
+              <p className="text-[12px] text-[#FF0F5B] leading-snug">
+                {healthError
+                  ? `API unreachable: ${healthError}`
+                  : 'FastAPI offline on localhost:8000.'}
+              </p>
+            )}
+
+            <div className="pt-2 border-t border-[#E5E7EB] space-y-1.5">
+              <label
+                htmlFor="sidebar-parser-mode"
+                className="block text-[11px] font-mono uppercase tracking-wider text-[#4B5563]"
+              >
+                Query Parser Override
+              </label>
+              <select
+                id="sidebar-parser-mode"
+                value={parserMode}
+                onChange={(e) => onParserModeChange(e.target.value as ParserMode | '')}
+                className="w-full text-[12px] font-medium text-[#09090B] bg-[#F7F8FA] border border-[#BDC4D0] rounded px-2 py-1.5 focus:outline-none focus:border-[#67689E]"
+              >
+                <option value="">Server Default</option>
+                <option value="deterministic">Deterministic</option>
+                <option value="openai">OpenAI</option>
+                <option value="gemini">Gemini</option>
+              </select>
             </div>
+          </div>
+        )}
+
+        <button
+          type="button"
+          onClick={() => setInfoOpen((prev) => !prev)}
+          className="w-full flex items-center justify-between px-2.5 py-2 rounded border border-[#E5E7EB] bg-[#FFFFFF] hover:bg-[#F7F8FA] transition-colors text-left focus:outline-none focus:border-[#67689E]"
+        >
+          <span className="flex items-center gap-2 min-w-0">
+            <span
+              className={`w-2 h-2 rounded-full shrink-0 ${
+                healthLoading
+                  ? 'bg-[#5BC2F4] animate-pulse'
+                  : isOnline
+                    ? 'bg-[#5BC2F4]'
+                    : 'bg-[#FF0F5B]'
+              }`}
+            />
+            <span className="text-[12px] font-semibold text-[#09090B] truncate">
+              {healthLoading ? 'Checking...' : isOnline ? 'Engine Info' : 'Engine Offline'}
+            </span>
+          </span>
+          {infoOpen ? (
+            <ChevronDown className="w-3.5 h-3.5 text-[#4B5563] shrink-0" />
           ) : (
-            <p className="text-[11.5px] text-[#9F1239] leading-relaxed">
-              {healthError
-                ? `Cannot reach FastAPI: ${healthError}`
-                : 'Start FastAPI on localhost:8000 to query live DuckDB data.'}
-            </p>
+            <ChevronUp className="w-3.5 h-3.5 text-[#4B5563] shrink-0" />
           )}
-        </div>
+        </button>
       </div>
     </aside>
   );

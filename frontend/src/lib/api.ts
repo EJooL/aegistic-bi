@@ -1,11 +1,11 @@
 // Strict TypeScript API Client & Data Formatters matching docs/api_contract.md
 
 export const SERIES_PALETTE = [
-  '#3B498B',
-  '#4DA8E5',
-  '#7685C4',
-  '#2A7EB5',
-  '#9BCBF0',
+  '#5BC2F4',
+  '#67689E',
+  '#FF0F5B',
+  '#09090B',
+  '#BDC4D0',
 ] as const;
 
 export const API_BASE_URL: string = (
@@ -34,6 +34,7 @@ export type ValueFormat =
   | 'percentage'
   | 'integer'
   | 'decimal'
+  | 'float'
   | 'string'
   | 'date'
   | string;
@@ -418,7 +419,6 @@ export function formatIDR(value: number, compact = false): string {
 
 export function formatPercentage(value: number): string {
   if (!Number.isFinite(value)) return '—';
-  // DuckDB ratios may arrive as 0..1 (e.g. 0.245) or already in 0..100 (e.g. 24.5)
   const normalized = Math.abs(value) <= 1 ? value * 100 : value;
   return `${normalized.toFixed(1)}%`;
 }
@@ -458,7 +458,7 @@ export function formatValue(
     return Number.isFinite(num) ? formatInteger(num) : String(raw);
   }
 
-  if (format === 'decimal') {
+  if (format === 'decimal' || format === 'float') {
     const num = typeof raw === 'number' ? raw : Number(raw);
     return Number.isFinite(num) ? formatDecimal(num) : String(raw);
   }
@@ -505,7 +505,8 @@ export function isNumericFormat(format: ValueFormat): boolean {
     format === 'currency_idr' ||
     format === 'percentage' ||
     format === 'integer' ||
-    format === 'decimal'
+    format === 'decimal' ||
+    format === 'float'
   );
 }
 

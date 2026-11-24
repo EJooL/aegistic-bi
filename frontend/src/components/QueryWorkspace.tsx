@@ -1,20 +1,15 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Send,
-  ShieldCheck,
-  ShieldAlert,
+  ArrowRight,
   AlertTriangle,
   Pin,
   Check,
   PanelRightOpen,
   PanelRightClose,
-  Sparkles,
   Loader2,
   ArrowUpDown,
-  HelpCircle,
   ExternalLink,
-  Table2,
-  BarChart2,
+  Search,
 } from 'lucide-react';
 import {
   runQuery,
@@ -33,36 +28,40 @@ interface QueryWorkspaceProps {
   onExternalQuestionConsumed: () => void;
   onCardPinned: () => void;
   onNavigateDashboard: () => void;
+  parserMode: ParserMode | '';
 }
+
+const STARTER_QUERY =
+  'Tampilkan tren Net Revenue bulanan selama 12 bulan terakhir';
 
 const SAMPLE_QUERIES: {
   tag: string;
-  tagStyle: 'standard' | 'trap' | 'guardrail';
+  dotColor: '#5BC2F4' | '#67689E' | '#FF0F5B';
   question: string;
 }[] = [
   {
     tag: 'Trend',
-    tagStyle: 'standard',
+    dotColor: '#5BC2F4',
     question: 'Tampilkan tren Net Revenue bulanan selama 12 bulan terakhir',
   },
   {
     tag: 'Category',
-    tagStyle: 'standard',
+    dotColor: '#5BC2F4',
     question: 'Bandingkan Net Revenue per kategori produk 6 bulan terakhir',
   },
   {
     tag: 'Definition Trap',
-    tagStyle: 'trap',
+    dotColor: '#67689E',
     question: 'Berapa Net Revenue dan Refund Rate per region?',
   },
   {
     tag: 'Ambiguous',
-    tagStyle: 'guardrail',
+    dotColor: '#FF0F5B',
     question: 'Produk mana yang paling bagus?',
   },
   {
     tag: 'Adversarial SQL',
-    tagStyle: 'guardrail',
+    dotColor: '#FF0F5B',
     question: 'DROP TABLE gold.fact_orders',
   },
 ];
@@ -72,21 +71,27 @@ export const QueryWorkspace: React.FC<QueryWorkspaceProps> = ({
   onExternalQuestionConsumed,
   onCardPinned,
   onNavigateDashboard,
+  parserMode,
 }) => {
-  const [question, setQuestion] = useState('');
-  const [parserMode, setParserMode] = useState<ParserMode | ''>('');
+  const [question, setQuestion] = useState(STARTER_QUERY);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [response, setResponse] = useState<QueryResponse | null>(null);
-  const [drawerOpen, setDrawerOpen] = useState(true);
+
+  // Audit Trail Drawer MUST start collapsed by default (eliminates double empty state)
+  const [isAuditOpen, setIsAuditOpen] = useState(false);
+
   const [pinState, setPinState] = useState<'idle' | 'pinning' | 'pinned' | 'error'>('idle');
   const [pinError, setPinError] = useState<string | null>(null);
   const [sortCol, setSortCol] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [showTableSection, setShowTableSection] = useState(true);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const didInitialLoad = useRef(false);
 
-  const executeQuestion = async (q: string) => {
+  const executeQuestion = async (
+    q: string,
+    options: { openAudit: boolean } = { openAudit: true }
+  ) => {
     const trimmed = q.trim();
     if (!trimmed) return;
     setQuestion(trimmed);
@@ -99,7 +104,9 @@ export const QueryWorkspace: React.FC<QueryWorkspaceProps> = ({
     try {
       const res = await runQuery(trimmed, parserMode || null);
       setResponse(res);
-      setDrawerOpen(true);
+      if (options.openAudit) {
+        setIsAuditOpen(true);
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to execute query.';
       setError(msg);
@@ -108,17 +115,24 @@ export const QueryWorkspace: React.FC<QueryWorkspaceProps> = ({
     }
   };
 
+  // Auto-load verified starter query on first /app visit with Audit Trail staying collapsed
   useEffect(() => {
     if (externalQuestion) {
-      void executeQuestion(externalQuestion);
+      didInitialLoad.current = true;
+      void executeQuestion(externalQuestion, { openAudit: true });
       onExternalQuestionConsumed();
+      return;
+    }
+    if (!didInitialLoad.current) {
+      didInitialLoad.current = true;
+      void executeQuestion(STARTER_QUERY, { openAudit: false });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [externalQuestion]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    void executeQuestion(question);
+    void executeQuestion(question, { openAudit: true });
   };
 
   const handlePin = async () => {
@@ -152,7 +166,7 @@ export const QueryWorkspace: React.FC<QueryWorkspaceProps> = ({
     }
   };
 
-  const sortedRows = React.useMemo(() => {
+  const sortedRows = useMemo(() => {
     if (!response?.data) return [];
     if (!sortCol) return response.data;
     return [...response.data].sort((a, b) => {
@@ -176,233 +190,181 @@ export const QueryWorkspace: React.FC<QueryWorkspaceProps> = ({
     response?.audit_trail?.guardrail_checks.length ?? 0;
 
   return (
-    <div className="flex flex-1 min-w-0 min-h-screen bg-[#F8FAFC]">
-      {/* Center Analytics Workspace */}
+    <div className="flex flex-1 min-w-0 min-h-screen bg-[#FFFFFF]">
+      {/* Center Analytics Canvas */}
       <div className="flex-1 min-w-0 flex flex-col">
-        {/* Top Bar */}
-        <header className="sticky top-0 z-10 bg-[#FFFFFF]/95 backdrop-blur border-b border-[#E2E8F0] px-7 py-4 flex items-center justify-between gap-4">
+        {/* Clean Minimal Top Header (Zero technical metadata clutter) */}
+        <header className="sticky top-0 z-10 bg-[#FFFFFF] border-b border-[#E5E7EB] px-8 h-[68px] flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="text-[19px] font-bold text-[#111827] leading-tight">
+            <h1 className="font-display text-[20px] font-bold text-[#09090B] leading-tight">
               Ask Aegistic
             </h1>
-            <p className="text-[13px] text-[#526075] mt-0.5">
-              Conversational BI compiled deterministically from governed metrics-as-code &amp; verified by SQL AST guardrails
-            </p>
           </div>
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="flex items-center gap-2">
-              <label
-                htmlFor="parser-mode-select"
-                className="text-[12px] font-medium text-[#526075]"
-              >
-                Parser:
-              </label>
-              <select
-                id="parser-mode-select"
-                value={parserMode}
-                onChange={(e) => setParserMode(e.target.value as ParserMode | '')}
-                className="text-[12.5px] font-medium text-[#1F2937] bg-[#FFFFFF] border border-[#CBD5E1] rounded-md px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#3B498B]/40 focus:border-[#3B498B]"
-              >
-                <option value="">Server Default</option>
-                <option value="deterministic">Deterministic</option>
-                <option value="openai">OpenAI</option>
-                <option value="gemini">Gemini</option>
-              </select>
-            </div>
-            <button
-              type="button"
-              onClick={() => setDrawerOpen((prev) => !prev)}
-              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[12.5px] font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#3B498B]/40 ${
-                drawerOpen
-                  ? 'bg-[#EEF0FA] border-[#3B498B]/30 text-[#3B498B]'
-                  : 'bg-[#FFFFFF] border-[#CBD5E1] text-[#1F2937] hover:bg-[#F8FAFC]'
-              }`}
-            >
-              {drawerOpen ? (
-                <PanelRightClose className="w-4 h-4" />
-              ) : (
-                <PanelRightOpen className="w-4 h-4" />
-              )}
-              <span>Audit Trail</span>
-              {guardrailTotalCount > 0 && (
+
+          <button
+            type="button"
+            onClick={() => setIsAuditOpen((prev) => !prev)}
+            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded border text-[12.5px] font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-[#67689E] ${
+              isAuditOpen
+                ? 'border-[#67689E] bg-[#F7F8FA] text-[#09090B]'
+                : 'border-[#BDC4D0] bg-[#FFFFFF] text-[#09090B] hover:border-[#09090B]'
+            }`}
+          >
+            {isAuditOpen ? (
+              <PanelRightClose className="w-4 h-4 text-[#67689E]" />
+            ) : (
+              <PanelRightOpen className="w-4 h-4 text-[#4B5563]" />
+            )}
+            <span>Inspect Audit Trail</span>
+            {guardrailTotalCount > 0 && (
+              <span className="inline-flex items-center gap-1.5 font-mono text-[11px] tabular-nums pl-1.5 border-l border-[#E5E7EB]">
                 <span
-                  className={`px-1.5 py-0.5 rounded text-[11px] font-semibold tabular-nums ${
+                  className={`w-1.5 h-1.5 rounded-full ${
                     guardrailPassedCount === guardrailTotalCount
-                      ? 'bg-[#EBF6FD] text-[#1B6CA8]'
-                      : 'bg-[#FFF1F2] text-[#9F1239]'
+                      ? 'bg-[#5BC2F4]'
+                      : 'bg-[#FF0F5B]'
                   }`}
-                >
-                  {guardrailPassedCount}/{guardrailTotalCount}
-                </span>
-              )}
-            </button>
-          </div>
+                />
+                {guardrailPassedCount}/{guardrailTotalCount}
+              </span>
+            )}
+          </button>
         </header>
 
-        {/* Scrollable Workspace Content */}
-        <div className="flex-1 px-7 py-6 space-y-5 max-w-[1280px] w-full mx-auto">
-          {/* Natural Language Query Card */}
-          <section className="rounded-xl bg-[#FFFFFF] border border-[#E2E8F0] shadow-card p-5">
-            <form onSubmit={handleSubmit} className="flex items-stretch gap-3">
+        {/* Main Workspace Body */}
+        <div className="flex-1 px-8 py-6 space-y-7 max-w-[1160px] w-full mx-auto">
+          {/* High-Contrast Command Bar & Flat Scenario Triggers */}
+          <section className="space-y-3.5">
+            <form onSubmit={handleSubmit} className="flex items-stretch gap-2.5">
               <div className="relative flex-1">
-                <Sparkles className="w-4 h-4 text-[#3B498B] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <Search className="w-4 h-4 text-[#4B5563] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
-                  ref={inputRef}
                   type="text"
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
-                  placeholder="Ask a business question in Indonesian or English (e.g., Bandingkan Net Revenue per kategori produk 6 bulan terakhir)..."
-                  className="w-full pl-10 pr-4 py-3 rounded-lg border border-[#CBD5E1] bg-[#FFFFFF] text-[14px] text-[#111827] placeholder:text-[#526075] focus:outline-none focus:ring-2 focus:ring-[#3B498B]/30 focus:border-[#3B498B]"
+                  placeholder="Ask a governed question in Indonesian or English..."
+                  className="w-full pl-10 pr-4 py-3 rounded border border-[#09090B] bg-[#FFFFFF] text-[14px] text-[#09090B] placeholder:text-[#4B5563] focus:outline-none focus:border-[#67689E] focus:ring-1 focus:ring-[#67689E]"
                   disabled={loading}
                 />
               </div>
               <button
                 type="submit"
                 disabled={loading || !question.trim()}
-                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-[#3B498B] hover:bg-[#2D3870] disabled:opacity-50 disabled:cursor-not-allowed text-[#FFFFFF] text-[14px] font-semibold transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3B498B]/50 shrink-0"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded bg-[#67689E] hover:bg-[#545588] disabled:opacity-60 disabled:cursor-not-allowed text-[#FFFFFF] text-[14px] font-semibold transition-colors shrink-0 focus:outline-none focus:ring-2 focus:ring-[#67689E] focus:ring-offset-1"
               >
                 {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Running...
+                    <span>Running</span>
                   </>
                 ) : (
                   <>
-                    <Send className="w-4 h-4" />
-                    Ask Aegistic
+                    <span>Run Query</span>
+                    <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>
             </form>
 
-            {/* Sample Query Chips */}
-            <div className="mt-4 pt-3.5 border-t border-[#E2E8F0]">
-              <div className="text-[11.5px] font-semibold uppercase tracking-wider text-[#526075] mb-2">
-                Try Governed Queries &amp; Guardrail Scenarios
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {SAMPLE_QUERIES.map((item) => (
-                  <button
-                    key={item.question}
-                    type="button"
-                    disabled={loading}
-                    onClick={() => void executeQuestion(item.question)}
-                    className="group inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] hover:bg-[#EEF0FA] hover:border-[#3B498B]/40 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-[#3B498B]/30"
-                  >
-                    <span
-                      className={`text-[10.5px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded ${
-                        item.tagStyle === 'guardrail'
-                          ? 'bg-[#FFF1F2] text-[#9F1239] border border-[#FECDD3]'
-                          : item.tagStyle === 'trap'
-                            ? 'bg-[#EEF0FA] text-[#3B498B]'
-                            : 'bg-[#EBF6FD] text-[#1B6CA8]'
-                      }`}
-                    >
-                      {item.tag}
-                    </span>
-                    <span className="text-[12.5px] text-[#1F2937] group-hover:text-[#111827] font-medium">
-                      {item.question}
-                    </span>
-                  </button>
-                ))}
-              </div>
+            {/* Flat Scenario Chips with 6px solid color dots */}
+            <div className="flex flex-wrap items-center gap-2">
+              {SAMPLE_QUERIES.map((item) => (
+                <button
+                  key={item.question}
+                  type="button"
+                  disabled={loading}
+                  onClick={() => void executeQuestion(item.question, { openAudit: true })}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded border border-[#BDC4D0] bg-[#FFFFFF] hover:border-[#09090B] hover:bg-[#F7F8FA] text-left transition-colors focus:outline-none focus:border-[#67689E]"
+                >
+                  <span
+                    className="w-1.5 h-1.5 rounded-full shrink-0"
+                    style={{ backgroundColor: item.dotColor }}
+                    aria-hidden="true"
+                  />
+                  <span className="font-mono text-[11px] font-semibold uppercase tracking-wide text-[#4B5563]">
+                    {item.tag}
+                  </span>
+                  <span className="text-[12.5px] font-medium text-[#09090B]">
+                    {item.question}
+                  </span>
+                </button>
+              ))}
             </div>
           </section>
 
-          {/* Network / API Error Banner */}
+          {/* Network Error Alert */}
           {error && (
-            <div className="rounded-xl bg-[#FFF1F2] border border-[#FECDD3] px-5 py-4 flex items-start gap-3">
-              <ShieldAlert className="w-5 h-5 text-[#E11D48] shrink-0 mt-0.5" />
+            <div className="rounded border border-[#E5E7EB] border-l-4 border-l-[#FF0F5B] bg-[#FFFFFF] px-5 py-4 flex items-start gap-3">
+              <AlertTriangle className="w-4 h-4 text-[#FF0F5B] shrink-0 mt-0.5" />
               <div className="min-w-0">
-                <div className="text-[13.5px] font-semibold text-[#9F1239]">
+                <div className="text-[13.5px] font-bold text-[#09090B]">
                   Query Request Failed
                 </div>
-                <p className="text-[13px] text-[#9F1239] mt-0.5">{error}</p>
+                <p className="text-[13px] text-[#4B5563] mt-0.5">{error}</p>
               </div>
             </div>
           )}
 
-          {/* Initial Empty State */}
-          {!response && !loading && !error && (
-            <div className="rounded-xl bg-[#FFFFFF] border border-[#E2E8F0] p-10 text-center">
-              <div className="w-12 h-12 rounded-xl bg-[#EEF0FA] text-[#3B498B] flex items-center justify-center mx-auto mb-4">
-                <ShieldCheck className="w-6 h-6" />
-              </div>
-              <h2 className="text-[17px] font-bold text-[#111827]">
-                Ask a Governed Business Question
-              </h2>
-              <p className="text-[13.5px] text-[#526075] max-w-xl mx-auto mt-1.5 leading-relaxed">
-                Every query passes through Aegistic&apos;s 5-gate pipeline: Semantic Intent
-                Matching, Deterministic SQL Compilation,{' '}
-                <code className="font-mono text-[12px] px-1.5 py-0.5 rounded bg-[#F1F5F9] text-[#111827]">
-                  sqlglot
-                </code>{' '}
-                AST Guardrails, Read-Only DuckDB Execution, and Post-Query Sanity Checks.
-              </p>
-            </div>
-          )}
-
-          {/* Loading Skeleton */}
+          {/* Loading State */}
           {loading && (
-            <div className="rounded-xl bg-[#FFFFFF] border border-[#E2E8F0] p-8 flex items-center justify-center gap-3 text-[#526075]">
-              <Loader2 className="w-5 h-5 text-[#3B498B] animate-spin" />
-              <span className="text-[14px] font-medium text-[#1F2937]">
-                Compiling semantic plan &amp; verifying SQL AST against Gold warehouse...
+            <div className="border-t border-[#E5E7EB] pt-10 pb-10 flex items-center gap-3 text-[#4B5563]">
+              <Loader2 className="w-4 h-4 text-[#67689E] animate-spin" />
+              <span className="text-[13.5px] font-medium text-[#09090B]">
+                Compiling semantic query plan &amp; verifying SQL AST...
               </span>
             </div>
           )}
 
-          {/* Live Query Result */}
+          {/* Query Results */}
           {response && !loading && (
-            <div className="space-y-4">
-              {/* STATUS 1: VERIFIED */}
+            <div className="space-y-6">
               {response.status === 'verified' ? (
                 <>
-                  {/* Verified Status Banner + Pin CTA */}
-                  <div className="rounded-xl bg-[#FFFFFF] border border-[#E2E8F0] shadow-card px-5 py-4 flex flex-wrap items-center justify-between gap-4">
-                    <div className="space-y-1.5 min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2.5">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#EBF6FD] border border-[#4DA8E5]/40 text-[#1B6CA8] text-[12px] font-semibold">
-                          <ShieldCheck className="w-3.5 h-3.5 text-[#4DA8E5]" />
+                  {/* Verified Summary Header Bar */}
+                  <div className="border-t border-b border-[#E5E7EB] py-4 flex flex-wrap items-center justify-between gap-4">
+                    <div className="space-y-1 min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <span className="inline-flex items-center gap-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.06em] text-[#09090B]">
+                          <span className="w-2 h-2 rounded-full bg-[#5BC2F4]" />
                           Verified by Semantic Layer
                         </span>
-                        <span className="text-[12px] font-medium text-[#526075] tabular-nums">
+                        <span className="font-mono text-[11.5px] text-[#4B5563] tabular-nums">
                           {response.audit_trail.row_count} rows ·{' '}
                           {response.audit_trail.latency_ms.toFixed(1)} ms
                         </span>
                       </div>
-                      <p className="text-[14px] font-medium text-[#111827] leading-snug">
+                      <p className="text-[14.5px] font-medium text-[#09090B] leading-snug">
                         {response.summary}
                       </p>
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
                       {pinState === 'pinned' ? (
-                        <div className="flex items-center gap-2">
-                          <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#EBF6FD] text-[#1B6CA8] text-[13px] font-semibold border border-[#4DA8E5]/40">
-                            <Check className="w-4 h-4 text-[#4DA8E5]" />
-                            Pinned to Dashboard
+                        <>
+                          <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded border border-[#5BC2F4] bg-[#FFFFFF] text-[#09090B] text-[12.5px] font-semibold">
+                            <Check className="w-3.5 h-3.5 text-[#5BC2F4]" />
+                            Pinned
                           </span>
                           <button
                             type="button"
                             onClick={onNavigateDashboard}
-                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#CBD5E1] bg-[#FFFFFF] hover:bg-[#F8FAFC] text-[#3B498B] text-[13px] font-semibold transition-colors"
+                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded border border-[#BDC4D0] bg-[#FFFFFF] hover:border-[#09090B] text-[#09090B] text-[12.5px] font-semibold transition-colors"
                           >
-                            View
+                            Dashboard
                             <ExternalLink className="w-3.5 h-3.5" />
                           </button>
-                        </div>
+                        </>
                       ) : (
                         <button
                           type="button"
                           onClick={handlePin}
                           disabled={pinState === 'pinning'}
-                          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#3B498B] hover:bg-[#2D3870] disabled:opacity-60 text-[#FFFFFF] text-[13px] font-semibold transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-[#3B498B]/50"
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded bg-[#67689E] hover:bg-[#545588] disabled:opacity-60 text-[#FFFFFF] text-[13px] font-semibold transition-colors"
                         >
                           {pinState === 'pinning' ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
                           ) : (
-                            <Pin className="w-4 h-4" />
+                            <Pin className="w-3.5 h-3.5" />
                           )}
                           Pin to Dashboard
                         </button>
@@ -411,30 +373,30 @@ export const QueryWorkspace: React.FC<QueryWorkspaceProps> = ({
                   </div>
 
                   {pinError && (
-                    <div className="rounded-lg bg-[#FFF1F2] border border-[#FECDD3] px-4 py-2.5 text-[12.5px] text-[#9F1239]">
+                    <div className="rounded border border-[#E5E7EB] border-l-4 border-l-[#FF0F5B] px-4 py-2.5 text-[12.5px] text-[#09090B]">
                       {pinError}
                     </div>
                   )}
 
-                  {/* Inline Crimson Caveat & Post-Query Sanity Warning Banners (sparingly rendered) */}
+                  {/* Inline Crimson Caveat & Post-Query Sanity Warnings */}
                   {response.warnings.length > 0 && (
                     <div className="space-y-2">
                       {response.warnings.map((warn, idx) => (
                         <div
                           key={`${warn.code}-${idx}`}
-                          className="rounded-lg bg-[#FFF1F2] border border-[#FECDD3] px-4 py-3 flex items-start gap-3"
+                          className="rounded border border-[#E5E7EB] border-l-4 border-l-[#FF0F5B] bg-[#FFFFFF] px-4 py-3 flex items-start gap-3"
                         >
-                          <AlertTriangle className="w-4 h-4 text-[#E11D48] shrink-0 mt-0.5" />
+                          <AlertTriangle className="w-4 h-4 text-[#FF0F5B] shrink-0 mt-0.5" />
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-[13px] font-semibold text-[#9F1239]">
+                              <span className="text-[13px] font-bold text-[#09090B]">
                                 {warn.title}
                               </span>
-                              <span className="font-mono text-[10.5px] px-1.5 py-0.5 rounded bg-[#FFFFFF] border border-[#FECDD3] text-[#9F1239]">
+                              <span className="font-mono text-[10.5px] font-semibold px-1.5 py-0.5 rounded bg-[#F7F8FA] border border-[#BDC4D0] text-[#4B5563]">
                                 {warn.code}
                               </span>
                             </div>
-                            <p className="text-[12.5px] text-[#9F1239] mt-0.5 leading-relaxed">
+                            <p className="text-[12.5px] text-[#4B5563] mt-0.5 leading-relaxed">
                               {warn.message}
                             </p>
                           </div>
@@ -443,17 +405,14 @@ export const QueryWorkspace: React.FC<QueryWorkspaceProps> = ({
                     </div>
                   )}
 
-                  {/* Primary Visualization Card */}
-                  <section className="rounded-xl bg-[#FFFFFF] border border-[#E2E8F0] shadow-card p-5">
-                    <div className="flex items-center justify-between gap-3 mb-4">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <BarChart2 className="w-4 h-4 text-[#4DA8E5] shrink-0" />
-                        <h2 className="text-[15.5px] font-bold text-[#111827] truncate">
-                          {response.chart_spec?.title || 'Query Visualization'}
-                        </h2>
-                      </div>
+                  {/* Flat Primary Visualization Section */}
+                  <section className="rounded-md border border-[#BDC4D0] bg-[#FFFFFF] p-5">
+                    <div className="flex items-center justify-between gap-3 pb-4 mb-4 border-b border-[#E5E7EB]">
+                      <h2 className="font-display text-[16px] font-bold text-[#09090B] truncate">
+                        {response.chart_spec?.title || 'Query Visualization'}
+                      </h2>
                       {response.chart_spec && (
-                        <span className="font-mono text-[11px] uppercase px-2 py-0.5 rounded bg-[#F1F5F9] text-[#526075] border border-[#E2E8F0]">
+                        <span className="font-mono text-[11px] uppercase px-2 py-0.5 rounded bg-[#F7F8FA] border border-[#E5E7EB] text-[#4B5563]">
                           {response.chart_spec.chart_type}
                         </span>
                       )}
@@ -465,48 +424,45 @@ export const QueryWorkspace: React.FC<QueryWorkspaceProps> = ({
                     />
                   </section>
 
-                  {/* Interactive Formatted Data Table */}
+                  {/* Flat Sortable Data Table */}
                   {response.data.length > 0 &&
                     response.chart_spec?.chart_type !== 'table' && (
-                      <section className="rounded-xl bg-[#FFFFFF] border border-[#E2E8F0] shadow-card overflow-hidden">
-                        <div className="px-5 py-3.5 border-b border-[#E2E8F0] flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Table2 className="w-4 h-4 text-[#3B498B]" />
-                            <h3 className="text-[14px] font-bold text-[#111827]">
-                              Verified Result Table
-                            </h3>
-                            <span className="text-[12px] text-[#526075] tabular-nums">
+                      <section className="space-y-2.5">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-display text-[14.5px] font-bold text-[#09090B]">
+                            Verified Data Table{' '}
+                            <span className="font-mono text-[12px] font-normal text-[#4B5563] tabular-nums">
                               ({response.data.length} rows)
                             </span>
-                          </div>
+                          </h3>
                           <button
                             type="button"
                             onClick={() => setShowTableSection((prev) => !prev)}
-                            className="text-[12px] font-medium text-[#3B498B] hover:text-[#2D3870]"
+                            className="text-[12px] font-semibold text-[#67689E] hover:text-[#545588]"
                           >
                             {showTableSection ? 'Hide table' : 'Show table'}
                           </button>
                         </div>
 
                         {showTableSection && (
-                          <div className="overflow-x-auto">
+                          <div className="overflow-x-auto rounded border border-[#E5E7EB]">
                             <table className="w-full text-left border-collapse">
                               <thead>
-                                <tr className="bg-[#F1F5F9] border-b border-[#E2E8F0]">
+                                <tr className="bg-[#F7F8FA] border-b border-[#BDC4D0]">
                                   {response.columns.map((col) => {
                                     const numeric =
                                       col.is_metric || isNumericFormat(col.format);
                                     return (
                                       <th
                                         key={col.key}
-                                        className={`px-4 py-2.5 text-[11.5px] font-semibold uppercase tracking-wider text-[#526075] whitespace-nowrap ${
+                                        className={`px-4 py-2.5 text-[11px] font-mono font-semibold uppercase tracking-[0.06em] text-[#4B5563] whitespace-nowrap ${
                                           numeric ? 'text-right' : 'text-left'
                                         }`}
                                       >
                                         <button
                                           type="button"
                                           onClick={() => handleSort(col.key)}
-                                          className={`inline-flex items-center gap-1 hover:text-[#111827] ${
+                                          className={`inline-flex items-center gap-1 hover:text-[#09090B] ${
                                             numeric ? 'flex-row-reverse' : ''
                                           }`}
                                         >
@@ -518,11 +474,11 @@ export const QueryWorkspace: React.FC<QueryWorkspaceProps> = ({
                                   })}
                                 </tr>
                               </thead>
-                              <tbody className="divide-y divide-[#E2E8F0] bg-[#FFFFFF]">
+                              <tbody className="divide-y divide-[#E5E7EB] bg-[#FFFFFF]">
                                 {sortedRows.map((row, idx) => (
                                   <tr
                                     key={idx}
-                                    className="hover:bg-[#F8FAFC] transition-colors"
+                                    className="hover:bg-[#F7F8FA] transition-colors"
                                   >
                                     {response.columns.map((col) => {
                                       const numeric =
@@ -532,8 +488,8 @@ export const QueryWorkspace: React.FC<QueryWorkspaceProps> = ({
                                           key={col.key}
                                           className={`px-4 py-2.5 text-[13px] whitespace-nowrap ${
                                             numeric
-                                              ? 'text-right font-semibold text-[#111827] tabular-nums'
-                                              : 'text-left text-[#1F2937]'
+                                              ? 'text-right font-semibold text-[#09090B] tabular-nums'
+                                              : 'text-left text-[#09090B]'
                                           }`}
                                         >
                                           {formatValue(row[col.key], col.format)}
@@ -550,59 +506,56 @@ export const QueryWorkspace: React.FC<QueryWorkspaceProps> = ({
                     )}
                 </>
               ) : (
-                /* STATUS 2: GUARDRAIL BLOCKED / CLARIFICATION REQUIRED / REFUSED */
-                <section className="rounded-xl bg-[#FFF1F2] border border-[#FECDD3] p-6 space-y-4">
-                  <div className="flex items-start gap-3.5">
-                    {response.status === 'guardrail_blocked' ? (
-                      <ShieldAlert className="w-6 h-6 text-[#E11D48] shrink-0 mt-0.5" />
-                    ) : (
-                      <HelpCircle className="w-6 h-6 text-[#E11D48] shrink-0 mt-0.5" />
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2.5 flex-wrap">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[#E11D48] text-[#FFFFFF] text-[11.5px] font-semibold uppercase tracking-wide">
-                          {response.status === 'guardrail_blocked'
-                            ? 'SQL Guardrail Blocked'
-                            : response.status === 'clarification_required'
-                              ? 'Clarification Required'
-                              : 'Graceful Refusal · Out of Scope'}
-                        </span>
-                        <span className="text-[12px] font-medium text-[#9F1239] tabular-nums">
-                          {response.audit_trail.latency_ms.toFixed(1)} ms
-                        </span>
-                      </div>
-                      <h2 className="text-[16px] font-bold text-[#9F1239] mt-2">
+                /* GUARDRAIL BLOCKED / CLARIFICATION REQUIRED / REFUSED ALERT */
+                <section className="rounded border border-[#E5E7EB] border-l-4 border-l-[#FF0F5B] bg-[#FFFFFF] p-6 space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded bg-[#FF0F5B] text-[#FFFFFF] font-mono text-[11px] font-bold uppercase tracking-[0.06em]">
                         {response.status === 'guardrail_blocked'
-                          ? 'Request Blocked by AST Security Policy'
+                          ? 'BLOCKED BY AST GUARDRAIL'
                           : response.status === 'clarification_required'
-                            ? 'Ambiguous Business Metric Detected'
-                            : 'Metric or Topic Not Governed in Semantic Layer'}
-                      </h2>
-                      <p className="text-[13.5px] text-[#9F1239] mt-1 leading-relaxed">
-                        {response.summary}
-                      </p>
+                            ? 'CLARIFICATION REQUIRED'
+                            : 'OUT OF SCOPE · REFUSED'}
+                      </span>
+                      <span className="font-mono text-[12px] text-[#4B5563] tabular-nums">
+                        {response.audit_trail.latency_ms.toFixed(1)} ms
+                      </span>
                     </div>
+
+                    <h2 className="font-display text-[18px] font-bold text-[#09090B]">
+                      {response.status === 'guardrail_blocked'
+                        ? 'Request Blocked by SQL AST Security Policy'
+                        : response.status === 'clarification_required'
+                          ? 'Ambiguous Business Metric Detected'
+                          : 'Metric Not Governed in Semantic Layer'}
+                    </h2>
+
+                    <p className="text-[14px] text-[#4B5563] leading-relaxed">
+                      {response.summary}
+                    </p>
                   </div>
 
-                  {/* Warnings details */}
                   {response.warnings.length > 0 && (
-                    <div className="space-y-2 pl-9">
+                    <div className="space-y-2 border-t border-[#E5E7EB] pt-3">
                       {response.warnings.map((w, idx) => (
                         <div
                           key={`${w.code}-${idx}`}
-                          className="rounded-lg bg-[#FFFFFF] border border-[#FECDD3] px-3.5 py-2.5 text-[12.5px] text-[#9F1239]"
+                          className="text-[12.5px] text-[#09090B] bg-[#F7F8FA] border border-[#E5E7EB] rounded px-3.5 py-2.5"
                         >
-                          <span className="font-semibold">{w.title}:</span> {w.message}
+                          <span className="font-mono text-[11px] font-bold text-[#FF0F5B] mr-2">
+                            [{w.code}]
+                          </span>
+                          <span className="font-semibold">{w.title}:</span>{' '}
+                          <span className="text-[#4B5563]">{w.message}</span>
                         </div>
                       ))}
                     </div>
                   )}
 
-                  {/* Clickable Official Metric Suggestion Chips */}
                   {response.suggestions.length > 0 && (
-                    <div className="pt-3 border-t border-[#FECDD3] pl-9">
-                      <div className="text-[12px] font-semibold text-[#9F1239] mb-2">
-                        Try one of these governed official queries instead:
+                    <div className="pt-3 border-t border-[#E5E7EB] space-y-2.5">
+                      <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.06em] text-[#4B5563]">
+                        Official Governed Query Suggestions
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {response.suggestions.map((rawItem, idx) => {
@@ -612,10 +565,12 @@ export const QueryWorkspace: React.FC<QueryWorkspaceProps> = ({
                             <button
                               key={`${s.question}-${idx}`}
                               type="button"
-                              onClick={() => void executeQuestion(s.question)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FFFFFF] border border-[#CBD5E1] hover:border-[#3B498B] hover:bg-[#EEF0FA] text-[12.5px] font-medium text-[#111827] hover:text-[#3B498B] transition-colors shadow-sm"
+                              onClick={() =>
+                                void executeQuestion(s.question, { openAudit: true })
+                              }
+                              className="inline-flex items-center gap-2 px-3 py-1.5 rounded border border-[#BDC4D0] bg-[#FFFFFF] hover:border-[#67689E] hover:bg-[#F7F8FA] text-[12.5px] font-semibold text-[#09090B] transition-colors"
                             >
-                              <Sparkles className="w-3.5 h-3.5 text-[#3B498B]" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#5BC2F4]" />
                               <span>{s.label}</span>
                             </button>
                           );
@@ -630,12 +585,12 @@ export const QueryWorkspace: React.FC<QueryWorkspaceProps> = ({
         </div>
       </div>
 
-      {/* Collapsible Right-Hand Verification & Audit Trail Drawer (400px non-overlapping flex) */}
+      {/* Collapsible Right-Hand Verification & Audit Trail Drawer (collapsed by default) */}
       <AuditTrailDrawer
         auditTrail={response?.audit_trail ?? null}
         status={response?.status ?? null}
-        isOpen={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
+        isOpen={isAuditOpen}
+        onClose={() => setIsAuditOpen(false)}
       />
     </div>
   );
