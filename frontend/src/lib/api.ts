@@ -530,3 +530,82 @@ export function normalizeSuggestion(
     metricKey: item.metric_key,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Humanized Editorial Warning Formatter (Never exposes raw internal enum codes)
+// ---------------------------------------------------------------------------
+export interface EditorialWarningMeta {
+  label: string;
+  pill: string;
+  message: string;
+  isPartialPeriod: boolean;
+}
+
+export function formatEditorialWarning(
+  warning: WarningItem
+): EditorialWarningMeta {
+  const code = (warning.code ?? '').toUpperCase();
+  const periodMatch = warning.message.match(/\b(20\d{2}-\d{2})\b/);
+
+  if (
+    code === 'PARTIAL_PERIOD' ||
+    warning.title.toLowerCase().includes('partial')
+  ) {
+    return {
+      label: 'Partial Period',
+      pill: periodMatch ? `${periodMatch[1]} · Open Month` : 'Open Period',
+      message: warning.message,
+      isPartialPeriod: true,
+    };
+  }
+
+  if (code === 'MISSING_DATES') {
+    return {
+      label: 'Date Gap',
+      pill: 'Series Check',
+      message: warning.message,
+      isPartialPeriod: false,
+    };
+  }
+
+  if (code === 'HIGH_NULL_RATIO') {
+    return {
+      label: 'Completeness Check',
+      pill: 'Null Threshold',
+      message: warning.message,
+      isPartialPeriod: false,
+    };
+  }
+
+  if (code === 'EMPTY_RESULT') {
+    return {
+      label: 'Empty Result',
+      pill: '0 Rows',
+      message: warning.message,
+      isPartialPeriod: false,
+    };
+  }
+
+  if (code === 'METRIC_CAVEAT' || code === 'CAVEAT') {
+    return {
+      label: warning.title || 'Metric Note',
+      pill: 'Semantic Note',
+      message: warning.message,
+      isPartialPeriod: false,
+    };
+  }
+
+  return {
+    label: warning.title || 'Data Notice',
+    pill: 'Advisory',
+    message: warning.message,
+    isPartialPeriod: false,
+  };
+}
+
+export function hasPartialPeriodWarning(
+  warnings: WarningItem[] | null | undefined
+): boolean {
+  if (!warnings || warnings.length === 0) return false;
+  return warnings.some((w) => formatEditorialWarning(w).isPartialPeriod);
+}

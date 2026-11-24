@@ -27,6 +27,7 @@ interface ChartRendererProps {
   columns: ColumnMeta[];
   data: DataRow[];
   compact?: boolean;
+  hasPartialPeriod?: boolean;
 }
 
 interface CustomTooltipPayloadItem {
@@ -85,6 +86,65 @@ const CustomChartTooltip: React.FC<CustomTooltipProps> = ({
   );
 };
 
+interface LineDotProps {
+  cx?: number;
+  cy?: number;
+  index?: number;
+  color: string;
+  lastIndex: number;
+  hasPartialPeriod: boolean;
+}
+
+const renderSeriesDot = ({
+  cx,
+  cy,
+  index,
+  color,
+  lastIndex,
+  hasPartialPeriod,
+}: LineDotProps) => {
+  if (typeof cx !== 'number' || typeof cy !== 'number') return <g />;
+
+  const isPartialLastPoint =
+    hasPartialPeriod && typeof index === 'number' && index === lastIndex;
+
+  if (isPartialLastPoint) {
+    return (
+      <g key={`partial-dot-${index}`}>
+        <circle
+          cx={cx}
+          cy={cy}
+          r={8.5}
+          fill="none"
+          stroke="#FF0F5B"
+          strokeWidth={1.5}
+          strokeDasharray="3 2"
+        />
+        <circle
+          cx={cx}
+          cy={cy}
+          r={4.5}
+          fill="#FFFFFF"
+          stroke="#FF0F5B"
+          strokeWidth={2}
+        />
+      </g>
+    );
+  }
+
+  return (
+    <circle
+      key={`dot-${index}`}
+      cx={cx}
+      cy={cy}
+      r={3.5}
+      fill="#FFFFFF"
+      stroke={color}
+      strokeWidth={2}
+    />
+  );
+};
+
 // Always map series strictly to the locked Swiss Geometric palette:
 // Primary #5BC2F4, Secondary #67689E, Anomaly/Refund highlight #FF0F5B.
 function resolveSwissSeriesColor(index: number, key: string): string {
@@ -106,6 +166,7 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({
   columns,
   data,
   compact = false,
+  hasPartialPeriod = false,
 }) => {
   if (!data || data.length === 0) {
     return (
@@ -169,7 +230,7 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({
               className="border-t-2 pt-4 pb-2 flex flex-col justify-between bg-[#FFFFFF]"
               style={{ borderTopColor: accent }}
             >
-              <div className="text-[12px] font-mono uppercase tracking-[0.06em] text-[#4B5563] mb-2">
+              <div className="text-[12px] font-semibold uppercase tracking-[0.05em] text-[#4B5563] mb-2">
                 {m.label}
               </div>
               <div
@@ -180,7 +241,7 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({
                 {primaryText}
               </div>
               {fullPrecision && (
-                <div className="mt-2 text-[12px] font-mono text-[#4B5563] tabular-nums">
+                <div className="mt-2 text-[12px] font-medium text-[#4B5563] tabular-nums">
                   {fullPrecision}
                 </div>
               )}
@@ -217,7 +278,7 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({
                 return (
                   <th
                     key={col.key}
-                    className={`px-3.5 py-2.5 text-[11px] font-mono font-semibold uppercase tracking-[0.06em] text-[#4B5563] whitespace-nowrap ${
+                    className={`px-3.5 py-2.5 text-[11.5px] font-semibold uppercase tracking-[0.05em] text-[#4B5563] whitespace-nowrap ${
                       numeric ? 'text-right' : 'text-left'
                     }`}
                   >
@@ -277,6 +338,8 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({
     return normalized;
   });
 
+  const lastIndex = chartData.length - 1;
+
   if (effectiveType === 'line') {
     return (
       <div style={{ width: '100%', height: chartHeight }} className="bg-[#FFFFFF]">
@@ -284,8 +347,8 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({
           <LineChart
             data={chartData}
             margin={{
-              top: 12,
-              right: hasDualAxis ? 16 : 18,
+              top: 14,
+              right: hasDualAxis ? 18 : 20,
               left: 8,
               bottom: 6,
             }}
@@ -343,8 +406,17 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({
                   name={series.label}
                   stroke={color}
                   strokeWidth={2.5}
-                  dot={{ r: 3.5, fill: '#FFFFFF', stroke: color, strokeWidth: 2 }}
-                  activeDot={{ r: 5, fill: color, stroke: '#FFFFFF', strokeWidth: 2 }}
+                  dot={(dotProps) =>
+                    renderSeriesDot({
+                      cx: dotProps.cx,
+                      cy: dotProps.cy,
+                      index: dotProps.index,
+                      color,
+                      lastIndex,
+                      hasPartialPeriod,
+                    })
+                  }
+                  activeDot={{ r: 5.5, fill: color, stroke: '#FFFFFF', strokeWidth: 2 }}
                 />
               );
             })}

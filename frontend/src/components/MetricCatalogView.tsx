@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Search,
-  AlertTriangle,
   Code2,
   ArrowRight,
   Loader2,
@@ -92,14 +91,14 @@ export const MetricCatalogView: React.FC<MetricCatalogViewProps> = ({
             Metric Catalog
           </h1>
           {catalog && (
-            <span className="font-mono text-[11.5px] font-medium px-2 py-0.5 rounded bg-[#F7F8FA] border border-[#BDC4D0] text-[#4B5563]">
+            <span className="text-[12px] font-medium px-2.5 py-0.5 rounded bg-[#F7F8FA] border border-[#BDC4D0] text-[#4B5563]">
               {catalog.model_name} v{catalog.version} · {catalog.currency}
             </span>
           )}
         </div>
 
         {catalog && (
-          <div className="flex items-center gap-4 font-mono text-[12px] text-[#4B5563] tabular-nums shrink-0">
+          <div className="flex items-center gap-4 text-[12.5px] text-[#4B5563] tabular-nums shrink-0">
             <span>
               <strong className="text-[#09090B]">{catalog.metrics.length}</strong> Metrics
             </span>
@@ -121,7 +120,7 @@ export const MetricCatalogView: React.FC<MetricCatalogViewProps> = ({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search metrics, formulas, owners, dimensions..."
-              className="w-full pl-9 pr-3.5 py-2 rounded border border-[#BDC4D0] bg-[#FFFFFF] text-[13.5px] text-[#09090B] placeholder:text-[#4B5563] focus:outline-none focus:border-[#67689E]"
+              className="w-full pl-9 pr-3.5 py-2 rounded border border-[#BDC4D0] bg-[#FFFFFF] text-[13.5px] text-[#09090B] placeholder:text-[#4B5563] focus:outline-none focus:border-[#09090B]"
             />
           </div>
 
@@ -131,7 +130,7 @@ export const MetricCatalogView: React.FC<MetricCatalogViewProps> = ({
               onClick={() => setFormatFilter('all')}
               className={`px-3 py-1.5 rounded text-[12.5px] font-semibold transition-colors ${
                 formatFilter === 'all'
-                  ? 'bg-[#67689E] text-[#FFFFFF]'
+                  ? 'bg-[#FF0F5B] text-[#FFFFFF]'
                   : 'border border-[#BDC4D0] bg-[#FFFFFF] text-[#09090B] hover:bg-[#F7F8FA]'
               }`}
             >
@@ -144,7 +143,7 @@ export const MetricCatalogView: React.FC<MetricCatalogViewProps> = ({
                 onClick={() => setFormatFilter(fmt)}
                 className={`px-3 py-1.5 rounded text-[12.5px] font-semibold transition-colors ${
                   formatFilter === fmt
-                    ? 'bg-[#67689E] text-[#FFFFFF]'
+                    ? 'bg-[#FF0F5B] text-[#FFFFFF]'
                     : 'border border-[#BDC4D0] bg-[#FFFFFF] text-[#09090B] hover:bg-[#F7F8FA]'
                 }`}
               >
@@ -155,15 +154,15 @@ export const MetricCatalogView: React.FC<MetricCatalogViewProps> = ({
         </div>
 
         {error && (
-          <div className="rounded border border-[#E5E7EB] border-l-4 border-l-[#FF0F5B] px-4 py-3 flex items-center justify-between text-[13px] text-[#09090B]">
+          <div className="rounded-md bg-[#09090B] text-[#FFFFFF] px-4 py-3 flex items-center justify-between text-[13px]">
             <div className="flex items-center gap-2.5">
-              <AlertTriangle className="w-4 h-4 text-[#FF0F5B]" />
+              <span className="w-2 h-2 rounded-full bg-[#FF0F5B] shrink-0" />
               <span>{error}</span>
             </div>
             <button
               type="button"
               onClick={() => void loadCatalog()}
-              className="font-semibold text-[#67689E] hover:underline"
+              className="font-semibold text-[#FF0F5B] hover:underline"
             >
               Retry
             </button>
@@ -172,7 +171,7 @@ export const MetricCatalogView: React.FC<MetricCatalogViewProps> = ({
 
         {loading ? (
           <div className="py-12 flex items-center gap-3 text-[#4B5563]">
-            <Loader2 className="w-4 h-4 text-[#67689E] animate-spin" />
+            <Loader2 className="w-4 h-4 text-[#FF0F5B] animate-spin" />
             <span className="text-[13.5px] font-medium text-[#09090B]">
               Loading governed metrics from semantic_models/commerce.yaml...
             </span>
@@ -183,7 +182,7 @@ export const MetricCatalogView: React.FC<MetricCatalogViewProps> = ({
             <section className="space-y-4">
               <h2 className="font-display text-[16px] font-bold text-[#09090B]">
                 Official Governed Metrics{' '}
-                <span className="font-mono text-[12.5px] font-normal text-[#4B5563] tabular-nums">
+                <span className="text-[13px] font-medium text-[#4B5563] tabular-nums">
                   ({filteredMetrics.length})
                 </span>
               </h2>
@@ -207,11 +206,11 @@ export const MetricCatalogView: React.FC<MetricCatalogViewProps> = ({
                               <h3 className="font-display text-[16.5px] font-bold text-[#09090B] leading-snug">
                                 {metric.label}
                               </h3>
-                              <div className="flex items-center flex-wrap gap-2 mt-1.5 font-mono text-[11px]">
-                                <span className="px-1.5 py-0.5 rounded bg-[#F7F8FA] border border-[#BDC4D0] text-[#67689E] font-semibold">
+                              <div className="flex items-center flex-wrap gap-2 mt-1.5 text-[11.5px]">
+                                <span className="px-2 py-0.5 rounded bg-[#F7F8FA] border border-[#BDC4D0] text-[#67689E] font-semibold">
                                   {metric.key}
                                 </span>
-                                <span className="inline-flex items-center gap-1.5 text-[#09090B]">
+                                <span className="inline-flex items-center gap-1.5 font-medium text-[#09090B]">
                                   <span className="w-1.5 h-1.5 rounded-full bg-[#5BC2F4]" />
                                   {FORMAT_LABELS[metric.format] ?? metric.format}
                                 </span>
@@ -228,7 +227,7 @@ export const MetricCatalogView: React.FC<MetricCatalogViewProps> = ({
                                   `Tampilkan ${metric.label} per bulan selama 6 bulan terakhir`
                                 )
                               }
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#67689E] hover:bg-[#545588] text-[#FFFFFF] text-[12px] font-semibold transition-colors shrink-0"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#FF0F5B] hover:bg-[#DC0A4D] active:bg-[#BE0842] text-[#FFFFFF] text-[12px] font-semibold transition-colors shrink-0"
                             >
                               <span>Query</span>
                               <ArrowRight className="w-3.5 h-3.5" />
@@ -239,10 +238,10 @@ export const MetricCatalogView: React.FC<MetricCatalogViewProps> = ({
                             {metric.description}
                           </p>
 
-                          {/* Formula / SQL Code Block */}
+                          {/* Formula / SQL Code Block (strictly JetBrains Mono) */}
                           <div>
                             <div className="flex items-center justify-between mb-1.5">
-                              <span className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[#4B5563]">
+                              <span className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[#4B5563]">
                                 {showRawSql ? 'Compiled SQL Expression' : 'Business Formula'}
                               </span>
                               <button
@@ -253,13 +252,13 @@ export const MetricCatalogView: React.FC<MetricCatalogViewProps> = ({
                                     [metric.key]: !prev[metric.key],
                                   }))
                                 }
-                                className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-[#67689E] hover:text-[#545588]"
+                                className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-[#09090B] hover:text-[#FF0F5B]"
                               >
                                 <Code2 className="w-3.5 h-3.5" />
                                 {showRawSql ? 'Formula' : 'SQL'}
                               </button>
                             </div>
-                            <pre className="sql-code-block rounded px-3 py-2.5 overflow-x-auto whitespace-pre-wrap break-words">
+                            <pre className="sql-code-block font-mono rounded px-3 py-2.5 overflow-x-auto whitespace-pre-wrap break-words">
                               <code>
                                 {showRawSql
                                   ? metric.sql_expression
@@ -271,7 +270,7 @@ export const MetricCatalogView: React.FC<MetricCatalogViewProps> = ({
                           {/* Mandatory Filters & Allowed Dimensions */}
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                             <div>
-                              <div className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[#4B5563] mb-1.5">
+                              <div className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[#4B5563] mb-1.5">
                                 Mandatory Filters
                               </div>
                               {metric.mandatory_filters.length > 0 ? (
@@ -279,7 +278,7 @@ export const MetricCatalogView: React.FC<MetricCatalogViewProps> = ({
                                   {metric.mandatory_filters.map((f, idx) => (
                                     <span
                                       key={idx}
-                                      className="font-mono text-[11px] px-2 py-0.5 rounded bg-[#F7F8FA] border border-[#BDC4D0] text-[#09090B]"
+                                      className="text-[11.5px] font-medium px-2 py-0.5 rounded bg-[#F7F8FA] border border-[#BDC4D0] text-[#09090B]"
                                     >
                                       {f}
                                     </span>
@@ -293,14 +292,14 @@ export const MetricCatalogView: React.FC<MetricCatalogViewProps> = ({
                             </div>
 
                             <div>
-                              <div className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.06em] text-[#4B5563] mb-1.5">
+                              <div className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[#4B5563] mb-1.5">
                                 Allowed Dimensions
                               </div>
                               <div className="flex flex-wrap gap-1.5">
                                 {metric.allowed_dimensions.map((dim) => (
                                   <span
                                     key={dim}
-                                    className="font-mono text-[11px] px-2 py-0.5 rounded bg-[#FFFFFF] border border-[#E5E7EB] text-[#09090B]"
+                                    className="text-[11.5px] font-medium px-2 py-0.5 rounded bg-[#FFFFFF] border border-[#E5E7EB] text-[#09090B]"
                                   >
                                     {dim}
                                   </span>
@@ -309,11 +308,12 @@ export const MetricCatalogView: React.FC<MetricCatalogViewProps> = ({
                             </div>
                           </div>
 
-                          {/* Caveats with crisp 2px #FF0F5B left rule */}
+                          {/* Sleek Flat Business Caveats Container (Zero left border stripe) */}
                           {metric.caveats.length > 0 && (
-                            <div className="border-l-2 border-l-[#FF0F5B] pl-3 py-0.5 space-y-1">
-                              <div className="font-mono text-[10.5px] font-bold uppercase tracking-[0.06em] text-[#FF0F5B]">
-                                Business Caveats
+                            <div className="rounded border border-[#E5E7EB] bg-[#FFF5F8] px-3.5 py-2.5 space-y-1.5">
+                              <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.05em] text-[#09090B]">
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#FF0F5B]" />
+                                <span>Business Caveats</span>
                               </div>
                               {metric.caveats.map((caveat, cIdx) => (
                                 <p
@@ -344,7 +344,7 @@ export const MetricCatalogView: React.FC<MetricCatalogViewProps> = ({
             <section className="space-y-3">
               <h2 className="font-display text-[16px] font-bold text-[#09090B]">
                 Official Dimensions{' '}
-                <span className="font-mono text-[12.5px] font-normal text-[#4B5563] tabular-nums">
+                <span className="text-[13px] font-medium text-[#4B5563] tabular-nums">
                   ({filteredDimensions.length})
                 </span>
               </h2>
@@ -353,16 +353,16 @@ export const MetricCatalogView: React.FC<MetricCatalogViewProps> = ({
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-[#F7F8FA] border-b border-[#BDC4D0]">
-                      <th className="px-4 py-3 text-[11px] font-mono font-semibold uppercase tracking-[0.06em] text-[#4B5563]">
+                      <th className="px-4 py-3 text-[11.5px] font-semibold uppercase tracking-[0.05em] text-[#4B5563]">
                         Dimension
                       </th>
-                      <th className="px-4 py-3 text-[11px] font-mono font-semibold uppercase tracking-[0.06em] text-[#4B5563]">
+                      <th className="px-4 py-3 text-[11.5px] font-semibold uppercase tracking-[0.05em] text-[#4B5563]">
                         Gold Source
                       </th>
-                      <th className="px-4 py-3 text-[11px] font-mono font-semibold uppercase tracking-[0.06em] text-[#4B5563]">
+                      <th className="px-4 py-3 text-[11.5px] font-semibold uppercase tracking-[0.05em] text-[#4B5563]">
                         Type &amp; Grains
                       </th>
-                      <th className="px-4 py-3 text-[11px] font-mono font-semibold uppercase tracking-[0.06em] text-[#4B5563]">
+                      <th className="px-4 py-3 text-[11.5px] font-semibold uppercase tracking-[0.05em] text-[#4B5563]">
                         Description
                       </th>
                     </tr>
@@ -374,24 +374,24 @@ export const MetricCatalogView: React.FC<MetricCatalogViewProps> = ({
                           <div className="text-[13.5px] font-bold text-[#09090B]">
                             {dim.label}
                           </div>
-                          <div className="font-mono text-[11.5px] text-[#67689E] mt-0.5">
+                          <div className="text-[12px] font-medium text-[#67689E] mt-0.5">
                             {dim.key}
                           </div>
                         </td>
                         <td className="px-4 py-3.5 whitespace-nowrap">
-                          <span className="font-mono text-[12px] px-2 py-0.5 rounded bg-[#F7F8FA] border border-[#E5E7EB] text-[#09090B]">
+                          <span className="text-[12px] font-medium px-2 py-0.5 rounded bg-[#F7F8FA] border border-[#E5E7EB] text-[#09090B]">
                             {dim.table}.{dim.column}
                           </span>
                         </td>
                         <td className="px-4 py-3.5 whitespace-nowrap">
-                          <div className="flex items-center flex-wrap gap-1.5 font-mono text-[11px]">
+                          <div className="flex items-center flex-wrap gap-1.5 text-[11.5px]">
                             <span className="px-2 py-0.5 rounded border border-[#BDC4D0] bg-[#FFFFFF] text-[#09090B] uppercase font-semibold">
                               {dim.type}
                             </span>
                             {dim.supported_grains?.map((g) => (
                               <span
                                 key={g}
-                                className="px-1.5 py-0.5 rounded bg-[#F7F8FA] text-[#4B5563]"
+                                className="px-2 py-0.5 rounded bg-[#F7F8FA] text-[#4B5563] font-medium"
                               >
                                 {g}
                               </span>

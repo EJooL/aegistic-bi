@@ -12,7 +12,6 @@ import {
 import {
   CheckCircle2,
   XCircle,
-  AlertTriangle,
   ChevronDown,
   ChevronRight,
   Search,
@@ -178,7 +177,7 @@ export const BenchmarkView: React.FC = () => {
             Evaluation Benchmark
           </h1>
           {report && (
-            <span className="font-mono text-[11.5px] font-semibold px-2 py-0.5 rounded bg-[#F7F8FA] border border-[#BDC4D0] text-[#09090B] tabular-nums">
+            <span className="text-[12px] font-semibold px-2.5 py-0.5 rounded bg-[#F7F8FA] border border-[#BDC4D0] text-[#09090B] tabular-nums">
               {report.dataset_size} Golden Cases
             </span>
           )}
@@ -186,7 +185,7 @@ export const BenchmarkView: React.FC = () => {
 
         <div className="flex items-center gap-3 shrink-0">
           {report && (
-            <span className="font-mono text-[11.5px] text-[#4B5563] tabular-nums">
+            <span className="text-[12px] font-medium text-[#4B5563] tabular-nums">
               {formatTimestamp(report.generated_at)}
             </span>
           )}
@@ -197,7 +196,7 @@ export const BenchmarkView: React.FC = () => {
             className="inline-flex items-center gap-2 px-3.5 py-2 rounded border border-[#BDC4D0] bg-[#FFFFFF] hover:border-[#09090B] text-[13px] font-semibold text-[#09090B] transition-colors"
           >
             <RefreshCw
-              className={`w-3.5 h-3.5 text-[#67689E] ${loading ? 'animate-spin' : ''}`}
+              className={`w-3.5 h-3.5 text-[#09090B] ${loading ? 'animate-spin' : ''}`}
             />
             Reload
           </button>
@@ -206,18 +205,18 @@ export const BenchmarkView: React.FC = () => {
 
       <div className="flex-1 px-8 py-6 max-w-[1400px] w-full mx-auto space-y-8">
         {error && (
-          <div className="rounded border border-[#E5E7EB] border-l-4 border-l-[#FF0F5B] px-5 py-4 flex items-center justify-between gap-4 text-[13px] text-[#09090B]">
+          <div className="rounded-md bg-[#09090B] text-[#FFFFFF] px-5 py-4 flex items-center justify-between gap-4 text-[13px]">
             <div className="flex items-center gap-2.5">
-              <AlertTriangle className="w-4 h-4 text-[#FF0F5B] shrink-0" />
+              <span className="w-2 h-2 rounded-full bg-[#FF0F5B] shrink-0" />
               <div>
                 <div className="font-bold">Benchmark Report Unavailable</div>
-                <div className="text-[#4B5563] mt-0.5">{error}</div>
+                <div className="text-[#D1D5DB] mt-0.5">{error}</div>
               </div>
             </div>
             <button
               type="button"
               onClick={() => void loadBenchmark()}
-              className="font-semibold text-[#67689E] hover:underline shrink-0"
+              className="font-semibold text-[#FF0F5B] hover:underline shrink-0"
             >
               Retry
             </button>
@@ -226,7 +225,7 @@ export const BenchmarkView: React.FC = () => {
 
         {loading ? (
           <div className="py-12 flex items-center gap-3 text-[#4B5563]">
-            <Loader2 className="w-4 h-4 text-[#67689E] animate-spin" />
+            <Loader2 className="w-4 h-4 text-[#FF0F5B] animate-spin" />
             <span className="text-[13.5px] font-medium text-[#09090B]">
               Loading 60-case evaluation benchmark report...
             </span>
@@ -234,7 +233,7 @@ export const BenchmarkView: React.FC = () => {
         ) : (
           report && (
             <>
-              {/* 4 Swiss Stat Strip KPI Blocks (Flat, top accent rule, zero shadows) */}
+              {/* 4 Swiss Stat Strip KPI Blocks */}
               <section className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
                 {kpiCards.map((card) => (
                   <div
@@ -244,17 +243,17 @@ export const BenchmarkView: React.FC = () => {
                   >
                     <div>
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.06em] text-[#4B5563]">
+                        <span className="text-[11.5px] font-semibold uppercase tracking-[0.04em] text-[#4B5563]">
                           {card.title}
                         </span>
-                        <span className="font-mono text-[11px] font-bold text-[#09090B] tabular-nums">
+                        <span className="text-[11.5px] font-bold text-[#09090B] tabular-nums">
                           {card.delta}
                         </span>
                       </div>
 
                       <div className="mt-4 flex items-baseline justify-between gap-2">
                         <div>
-                          <div className="font-mono text-[10px] uppercase tracking-wider text-[#67689E] font-semibold">
+                          <div className="text-[10.5px] uppercase tracking-wider text-[#FF0F5B] font-semibold">
                             Aegistic
                           </div>
                           <div className="kpi-number text-[32px] font-bold text-[#09090B] leading-tight">
@@ -262,7 +261,7 @@ export const BenchmarkView: React.FC = () => {
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="font-mono text-[10px] uppercase tracking-wider text-[#4B5563]">
+                          <div className="text-[10.5px] uppercase tracking-wider text-[#4B5563] font-medium">
                             Baseline
                           </div>
                           <div className="text-[18px] font-semibold text-[#4B5563] tabular-nums">
@@ -357,7 +356,7 @@ export const BenchmarkView: React.FC = () => {
                             <span className="text-[13.5px] font-bold text-[#09090B]">
                               {cat.label}
                             </span>
-                            <span className="font-mono text-[11.5px] text-[#4B5563] tabular-nums">
+                            <span className="text-[12px] font-medium text-[#4B5563] tabular-nums">
                               {cat.total} cases
                             </span>
                           </div>
@@ -388,7 +387,7 @@ export const BenchmarkView: React.FC = () => {
                   <div>
                     <h2 className="font-display text-[16px] font-bold text-[#09090B]">
                       All Evaluation Cases{' '}
-                      <span className="font-mono text-[12.5px] font-normal text-[#4B5563] tabular-nums">
+                      <span className="text-[13px] font-medium text-[#4B5563] tabular-nums">
                         ({filteredCases.length} of {report.cases.length})
                       </span>
                     </h2>
@@ -405,14 +404,14 @@ export const BenchmarkView: React.FC = () => {
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         placeholder="Search ID, question, error..."
-                        className="pl-8 pr-3 py-1.5 rounded border border-[#BDC4D0] bg-[#FFFFFF] text-[12.5px] text-[#09090B] placeholder:text-[#4B5563] focus:outline-none focus:border-[#67689E] w-56"
+                        className="pl-8 pr-3 py-1.5 rounded border border-[#BDC4D0] bg-[#FFFFFF] text-[12.5px] text-[#09090B] placeholder:text-[#4B5563] focus:outline-none focus:border-[#09090B] w-56"
                       />
                     </div>
 
                     <select
                       value={categoryFilter}
                       onChange={(e) => setCategoryFilter(e.target.value)}
-                      className="text-[12.5px] font-medium text-[#09090B] bg-[#FFFFFF] border border-[#BDC4D0] rounded px-2.5 py-1.5 focus:outline-none focus:border-[#67689E]"
+                      className="text-[12.5px] font-medium text-[#09090B] bg-[#FFFFFF] border border-[#BDC4D0] rounded px-2.5 py-1.5 focus:outline-none focus:border-[#09090B]"
                     >
                       <option value="all">All Categories</option>
                       <option value="standard">Standard Business Queries</option>
@@ -427,7 +426,7 @@ export const BenchmarkView: React.FC = () => {
                           e.target.value as 'all' | 'aegistic_win' | 'any_fail'
                         )
                       }
-                      className="text-[12.5px] font-medium text-[#09090B] bg-[#FFFFFF] border border-[#BDC4D0] rounded px-2.5 py-1.5 focus:outline-none focus:border-[#67689E]"
+                      className="text-[12.5px] font-medium text-[#09090B] bg-[#FFFFFF] border border-[#BDC4D0] rounded px-2.5 py-1.5 focus:outline-none focus:border-[#09090B]"
                     >
                       <option value="all">All Outcomes</option>
                       <option value="aegistic_win">Aegistic Fixed Baseline Error</option>
@@ -441,22 +440,22 @@ export const BenchmarkView: React.FC = () => {
                     <thead>
                       <tr className="bg-[#F7F8FA] border-b border-[#BDC4D0]">
                         <th className="w-9 px-3 py-3" />
-                        <th className="px-3 py-3 text-[11px] font-mono font-semibold uppercase tracking-[0.06em] text-[#4B5563] whitespace-nowrap">
+                        <th className="px-3 py-3 text-[11.5px] font-semibold uppercase tracking-[0.05em] text-[#4B5563] whitespace-nowrap">
                           ID
                         </th>
-                        <th className="px-3 py-3 text-[11px] font-mono font-semibold uppercase tracking-[0.06em] text-[#4B5563] whitespace-nowrap">
+                        <th className="px-3 py-3 text-[11.5px] font-semibold uppercase tracking-[0.05em] text-[#4B5563] whitespace-nowrap">
                           Category
                         </th>
-                        <th className="px-3 py-3 text-[11px] font-mono font-semibold uppercase tracking-[0.06em] text-[#4B5563]">
+                        <th className="px-3 py-3 text-[11.5px] font-semibold uppercase tracking-[0.05em] text-[#4B5563]">
                           Question
                         </th>
-                        <th className="px-3 py-3 text-[11px] font-mono font-semibold uppercase tracking-[0.06em] text-[#4B5563] whitespace-nowrap">
+                        <th className="px-3 py-3 text-[11.5px] font-semibold uppercase tracking-[0.05em] text-[#4B5563] whitespace-nowrap">
                           Baseline
                         </th>
-                        <th className="px-3 py-3 text-[11px] font-mono font-semibold uppercase tracking-[0.06em] text-[#4B5563] whitespace-nowrap">
+                        <th className="px-3 py-3 text-[11.5px] font-semibold uppercase tracking-[0.05em] text-[#4B5563] whitespace-nowrap">
                           Aegistic
                         </th>
-                        <th className="px-3 py-3 text-[11px] font-mono font-semibold uppercase tracking-[0.06em] text-[#4B5563] text-right whitespace-nowrap">
+                        <th className="px-3 py-3 text-[11.5px] font-semibold uppercase tracking-[0.05em] text-[#4B5563] text-right whitespace-nowrap">
                           Latency (B / A)
                         </th>
                       </tr>
@@ -478,16 +477,16 @@ export const BenchmarkView: React.FC = () => {
                             >
                               <td className="px-3 py-3 text-[#4B5563]">
                                 {isExpanded ? (
-                                  <ChevronDown className="w-4 h-4 text-[#67689E]" />
+                                  <ChevronDown className="w-4 h-4 text-[#FF0F5B]" />
                                 ) : (
                                   <ChevronRight className="w-4 h-4" />
                                 )}
                               </td>
-                              <td className="px-3 py-3 font-mono text-[12px] font-bold text-[#09090B] whitespace-nowrap">
+                              <td className="px-3 py-3 text-[12.5px] font-bold text-[#09090B] tabular-nums whitespace-nowrap">
                                 {tc.id}
                               </td>
                               <td className="px-3 py-3 whitespace-nowrap">
-                                <span className="inline-flex items-center gap-1.5 font-mono text-[11px] font-semibold text-[#09090B]">
+                                <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#09090B]">
                                   <span
                                     className="w-1.5 h-1.5 rounded-full"
                                     style={{ backgroundColor: dotColor }}
@@ -500,7 +499,7 @@ export const BenchmarkView: React.FC = () => {
                               </td>
                               <td className="px-3 py-3 whitespace-nowrap">
                                 <div className="flex flex-col gap-0.5">
-                                  <span className="inline-flex items-center gap-1 font-mono text-[11.5px] font-bold text-[#09090B]">
+                                  <span className="inline-flex items-center gap-1 text-[12px] font-bold text-[#09090B]">
                                     {tc.baseline.passed ? (
                                       <CheckCircle2 className="w-3.5 h-3.5 text-[#5BC2F4]" />
                                     ) : (
@@ -509,7 +508,7 @@ export const BenchmarkView: React.FC = () => {
                                     {tc.baseline.passed ? 'PASS' : 'FAIL'}
                                   </span>
                                   {tc.baseline.error_type && (
-                                    <span className="font-mono text-[10.5px] text-[#FF0F5B]">
+                                    <span className="text-[11px] font-medium text-[#FF0F5B]">
                                       {tc.baseline.error_type}
                                     </span>
                                   )}
@@ -517,7 +516,7 @@ export const BenchmarkView: React.FC = () => {
                               </td>
                               <td className="px-3 py-3 whitespace-nowrap">
                                 <div className="flex flex-col gap-0.5">
-                                  <span className="inline-flex items-center gap-1 font-mono text-[11.5px] font-bold text-[#09090B]">
+                                  <span className="inline-flex items-center gap-1 text-[12px] font-bold text-[#09090B]">
                                     {tc.aegistic.passed ? (
                                       <CheckCircle2 className="w-3.5 h-3.5 text-[#5BC2F4]" />
                                     ) : (
@@ -526,13 +525,13 @@ export const BenchmarkView: React.FC = () => {
                                     {tc.aegistic.passed ? 'PASS' : 'FAIL'}
                                   </span>
                                   {tc.aegistic.error_type && (
-                                    <span className="font-mono text-[10.5px] text-[#FF0F5B]">
+                                    <span className="text-[11px] font-medium text-[#FF0F5B]">
                                       {tc.aegistic.error_type}
                                     </span>
                                   )}
                                 </div>
                               </td>
-                              <td className="px-3 py-3 text-right font-mono text-[12px] text-[#09090B] tabular-nums whitespace-nowrap">
+                              <td className="px-3 py-3 text-right text-[12.5px] text-[#09090B] tabular-nums whitespace-nowrap">
                                 {tc.baseline.latency_ms.toFixed(1)} /{' '}
                                 <strong>{tc.aegistic.latency_ms.toFixed(1)}</strong> ms
                               </td>
@@ -544,11 +543,11 @@ export const BenchmarkView: React.FC = () => {
                                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                     <div className="rounded border border-[#BDC4D0] bg-[#FFFFFF] p-4 space-y-2.5">
                                       <div className="flex items-center justify-between">
-                                        <span className="font-mono text-[11px] font-bold uppercase tracking-[0.06em] text-[#4B5563]">
+                                        <span className="text-[11.5px] font-bold uppercase tracking-[0.05em] text-[#4B5563]">
                                           Baseline (Raw Text-to-SQL)
                                         </span>
                                         <span
-                                          className={`font-mono text-[11px] px-2 py-0.5 rounded font-semibold ${
+                                          className={`text-[11px] px-2 py-0.5 rounded font-semibold ${
                                             tc.baseline.passed
                                               ? 'border border-[#5BC2F4] text-[#09090B]'
                                               : 'bg-[#FF0F5B] text-[#FFFFFF]'
@@ -560,7 +559,7 @@ export const BenchmarkView: React.FC = () => {
                                       <p className="text-[12.5px] text-[#4B5563] leading-relaxed">
                                         {tc.baseline.note}
                                       </p>
-                                      <pre className="sql-code-block rounded p-3 overflow-x-auto whitespace-pre-wrap break-words max-h-48">
+                                      <pre className="sql-code-block font-mono rounded p-3 overflow-x-auto whitespace-pre-wrap break-words max-h-48">
                                         <code>
                                           {tc.baseline.sql || '-- No SQL generated'}
                                         </code>
@@ -569,11 +568,11 @@ export const BenchmarkView: React.FC = () => {
 
                                     <div className="rounded border border-[#5BC2F4] bg-[#FFFFFF] p-4 space-y-2.5">
                                       <div className="flex items-center justify-between">
-                                        <span className="font-mono text-[11px] font-bold uppercase tracking-[0.06em] text-[#67689E]">
+                                        <span className="text-[11.5px] font-bold uppercase tracking-[0.05em] text-[#67689E]">
                                           Aegistic (Semantic Layer + Guardrails)
                                         </span>
                                         <span
-                                          className={`font-mono text-[11px] px-2 py-0.5 rounded font-semibold ${
+                                          className={`text-[11px] px-2 py-0.5 rounded font-semibold ${
                                             tc.aegistic.passed
                                               ? 'border border-[#5BC2F4] text-[#09090B]'
                                               : 'bg-[#FF0F5B] text-[#FFFFFF]'
@@ -585,7 +584,7 @@ export const BenchmarkView: React.FC = () => {
                                       <p className="text-[12.5px] text-[#4B5563] leading-relaxed">
                                         {tc.aegistic.note}
                                       </p>
-                                      <pre className="sql-code-block rounded p-3 overflow-x-auto whitespace-pre-wrap break-words max-h-48">
+                                      <pre className="sql-code-block font-mono rounded p-3 overflow-x-auto whitespace-pre-wrap break-words max-h-48">
                                         <code>
                                           {tc.aegistic.sql ||
                                             '-- Safely refused / blocked before SQL execution'}

@@ -11,6 +11,11 @@ const config: Config = {
           DEFAULT: '#09090B',
           secondary: '#4B5563',
         },
+        cta: {
+          DEFAULT: '#FF0F5B',
+          hover: '#DC0A4D',
+          active: '#BE0842',
+        },
         brand: {
           DEFAULT: '#67689E',
           hover: '#545588',
@@ -25,12 +30,14 @@ const config: Config = {
       fontFamily: {
         display: [
           'Space Grotesk',
+          'Plus Jakarta Sans',
           'Inter',
           'ui-sans-serif',
           'system-ui',
           'sans-serif',
         ],
         sans: [
+          'Plus Jakarta Sans',
           'Inter',
           'ui-sans-serif',
           'system-ui',

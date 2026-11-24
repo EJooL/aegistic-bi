@@ -24,34 +24,22 @@ export const AegisticLogo: React.FC<AegisticLogoProps> = ({
         aria-hidden="true"
         className="shrink-0"
       >
-        {/* Flat Swiss geometric mark combining #67689E and #FF0F5B */}
-        <rect x="1" y="1" width="14" height="30" rx="2" fill="#67689E" />
+        {/* Chamfered architectural shield silhouette */}
         <path
-          d="M17 1H24C27.866 1 31 4.13401 31 8C31 11.866 27.866 15 24 15H17V1Z"
-          fill="#FF0F5B"
+          d="M16 1.5L28.5 5.5V17.5L16 30.5L3.5 17.5V5.5L16 1.5Z"
+          fill="#09090B"
         />
-        <rect
-          x="17.75"
-          y="17.75"
-          width="12.5"
-          height="12.5"
-          rx="1.5"
-          stroke="#09090B"
-          strokeWidth="1.5"
-          fill="#FFFFFF"
-        />
-        <rect x="21.5" y="21.5" width="5" height="5" fill="#5BC2F4" />
+        {/* Three ascending verified analytics bars */}
+        <rect x="8.5" y="15.5" width="3.8" height="6" rx="0.5" fill="#BDC4D0" />
+        <rect x="14.1" y="12" width="3.8" height="9.5" rx="0.5" fill="#5BC2F4" />
+        <rect x="19.7" y="8" width="3.8" height="13.5" rx="0.5" fill="#FF0F5B" />
       </svg>
       <span className="flex flex-col leading-none">
-        <span className="inline-flex items-baseline gap-0.5 font-display text-[18px] font-bold tracking-[-0.03em] text-[#09090B]">
+        <span className="font-display font-bold tracking-[-0.03em] text-[20px] text-[#09090B]">
           Aegistic
-          <span
-            className="inline-block w-1.5 h-1.5 bg-[#FF0F5B] ml-0.5"
-            aria-hidden="true"
-          />
         </span>
         {showSubtitle && (
-          <span className="text-[10.5px] font-medium uppercase tracking-[0.08em] text-[#4B5563] mt-1">
+          <span className="text-[11px] font-medium tracking-normal text-[#4B5563] mt-1">
             Verified Semantic BI
           </span>
         )}
@@ -64,7 +52,7 @@ export const AegisticLogo: React.FC<AegisticLogoProps> = ({
       <button
         type="button"
         onClick={onClick}
-        className="inline-flex items-center focus:outline-none focus:ring-2 focus:ring-[#67689E] rounded"
+        className="inline-flex items-center focus:outline-none focus:ring-2 focus:ring-[#FF0F5B] rounded"
       >
         {content}
       </button>

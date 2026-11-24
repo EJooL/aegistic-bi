@@ -81,7 +81,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Navigation Links */}
         <nav className="py-4">
-          <div className="px-5 pb-2 text-[10.5px] font-mono font-semibold uppercase tracking-[0.1em] text-[#4B5563]">
+          <div className="px-5 pb-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#4B5563]">
             Workspace
           </div>
           <div className="space-y-0.5">
@@ -108,14 +108,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 >
                   {isActive && (
                     <span
-                      className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#67689E]"
+                      className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#FF0F5B]"
                       aria-hidden="true"
                     />
                   )}
                   <span className="flex items-center gap-2.5 min-w-0">
                     <Icon
                       className={`w-[16px] h-[16px] shrink-0 ${
-                        isActive ? 'text-[#67689E]' : 'text-[#4B5563]'
+                        isActive ? 'text-[#09090B]' : 'text-[#4B5563]'
                       }`}
                     />
                     <span
@@ -127,7 +127,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     </span>
                   </span>
                   {count && (
-                    <span className="ml-2 font-mono text-[11px] font-semibold text-[#4B5563] tabular-nums">
+                    <span className="ml-2 text-[11.5px] font-semibold text-[#4B5563] tabular-nums">
                       {count}
                     </span>
                   )}
@@ -143,7 +143,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {infoOpen && (
           <div className="absolute left-3 right-3 bottom-[60px] z-30 bg-[#FFFFFF] border border-[#BDC4D0] rounded-md p-3.5 space-y-3">
             <div className="flex items-center justify-between border-b border-[#E5E7EB] pb-2">
-              <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-[#09090B]">
+              <span className="text-[11.5px] font-semibold uppercase tracking-[0.06em] text-[#09090B]">
                 Engine Telemetry
               </span>
               <button
@@ -165,19 +165,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <Database className="w-3.5 h-3.5 text-[#5BC2F4]" />
                     DuckDB Gold
                   </span>
-                  <span className="font-mono font-semibold text-[#09090B] tabular-nums">
+                  <span className="font-semibold text-[#09090B] tabular-nums">
                     {health.gold_tables?.length ?? 0} tables
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[#4B5563]">Semantic Contract</span>
-                  <span className="font-mono font-semibold text-[#09090B] tabular-nums">
+                  <span className="font-semibold text-[#09090B] tabular-nums">
                     {health.metrics_loaded}M · {health.dimensions_loaded}D
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-[#4B5563]">Server Parser</span>
-                  <span className="font-mono font-semibold text-[#09090B]">
+                  <span className="font-semibold text-[#09090B] capitalize">
                     {health.parser_mode}
                   </span>
                 </div>
@@ -193,7 +193,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div className="pt-2 border-t border-[#E5E7EB] space-y-1.5">
               <label
                 htmlFor="sidebar-parser-mode"
-                className="block text-[11px] font-mono uppercase tracking-wider text-[#4B5563]"
+                className="block text-[11px] font-semibold text-[#4B5563]"
               >
                 Query Parser Override
               </label>
@@ -201,7 +201,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 id="sidebar-parser-mode"
                 value={parserMode}
                 onChange={(e) => onParserModeChange(e.target.value as ParserMode | '')}
-                className="w-full text-[12px] font-medium text-[#09090B] bg-[#F7F8FA] border border-[#BDC4D0] rounded px-2 py-1.5 focus:outline-none focus:border-[#67689E]"
+                className="w-full text-[12px] font-medium text-[#09090B] bg-[#F7F8FA] border border-[#BDC4D0] rounded px-2 py-1.5 focus:outline-none focus:border-[#09090B]"
               >
                 <option value="">Server Default</option>
                 <option value="deterministic">Deterministic</option>
@@ -215,7 +215,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <button
           type="button"
           onClick={() => setInfoOpen((prev) => !prev)}
-          className="w-full flex items-center justify-between px-2.5 py-2 rounded border border-[#E5E7EB] bg-[#FFFFFF] hover:bg-[#F7F8FA] transition-colors text-left focus:outline-none focus:border-[#67689E]"
+          className="w-full flex items-center justify-between px-2.5 py-2 rounded border border-[#E5E7EB] bg-[#FFFFFF] hover:bg-[#F7F8FA] transition-colors text-left focus:outline-none focus:border-[#09090B]"
         >
           <span className="flex items-center gap-2 min-w-0">
             <span

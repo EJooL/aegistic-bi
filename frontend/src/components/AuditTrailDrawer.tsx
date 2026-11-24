@@ -85,10 +85,10 @@ export const AuditTrailDrawer: React.FC<AuditTrailDrawerProps> = ({
           </div>
         ) : (
           <>
-            {/* Telemetry Strip (Flat Swiss hairline grid) */}
+            {/* Telemetry Strip */}
             <div className="grid grid-cols-3 divide-x divide-[#E5E7EB] bg-[#F7F8FA]">
               <div className="px-4 py-3">
-                <div className="font-mono text-[10.5px] uppercase tracking-wider text-[#4B5563]">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[#4B5563]">
                   Latency
                 </div>
                 <div className="mt-0.5 text-[15px] font-bold text-[#09090B] tabular-nums">
@@ -96,7 +96,7 @@ export const AuditTrailDrawer: React.FC<AuditTrailDrawerProps> = ({
                 </div>
               </div>
               <div className="px-4 py-3">
-                <div className="font-mono text-[10.5px] uppercase tracking-wider text-[#4B5563]">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[#4B5563]">
                   Rows
                 </div>
                 <div className="mt-0.5 text-[15px] font-bold text-[#09090B] tabular-nums">
@@ -104,10 +104,10 @@ export const AuditTrailDrawer: React.FC<AuditTrailDrawerProps> = ({
                 </div>
               </div>
               <div className="px-4 py-3">
-                <div className="font-mono text-[10.5px] uppercase tracking-wider text-[#4B5563]">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[#4B5563]">
                   Parser
                 </div>
-                <div className="mt-0.5 text-[13px] font-mono font-semibold text-[#09090B] truncate">
+                <div className="mt-0.5 text-[13px] font-semibold text-[#09090B] truncate capitalize">
                   {auditTrail.parser_used}
                 </div>
               </div>
@@ -116,34 +116,34 @@ export const AuditTrailDrawer: React.FC<AuditTrailDrawerProps> = ({
             {/* 1. Business Formulas & Mandatory Filters */}
             {auditTrail.metrics_used.length > 0 && (
               <section className="px-5 py-4 space-y-4">
-                <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-[#4B5563]">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#4B5563]">
                   01 / Semantic Definitions
                 </div>
                 <div className="space-y-4">
                   {auditTrail.metrics_used.map((m) => (
-                    <div key={m.key} className="space-y-2">
+                    <div key={m.key} className="space-y-2.5">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-[13.5px] font-bold text-[#09090B]">
                           {m.label}
                         </span>
-                        <span className="font-mono text-[11px] px-1.5 py-0.5 rounded border border-[#BDC4D0] bg-[#FFFFFF] text-[#67689E] font-semibold">
+                        <span className="text-[11px] px-1.5 py-0.5 rounded border border-[#BDC4D0] bg-[#FFFFFF] text-[#67689E] font-semibold">
                           {m.key}
                         </span>
                       </div>
 
-                      <div className="sql-code-block rounded px-3 py-2 break-words">
-                        {m.formula_display}
-                      </div>
+                      <pre className="sql-code-block font-mono rounded px-3 py-2 overflow-x-auto whitespace-pre-wrap break-words">
+                        <code>{m.formula_display}</code>
+                      </pre>
 
                       {m.mandatory_filters.length > 0 && (
                         <div className="flex flex-wrap items-center gap-1.5">
-                          <span className="text-[11px] font-medium text-[#4B5563]">
+                          <span className="text-[11.5px] font-medium text-[#4B5563]">
                             Filters:
                           </span>
                           {m.mandatory_filters.map((f, i) => (
                             <span
                               key={i}
-                              className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-[#F7F8FA] border border-[#BDC4D0] text-[#09090B]"
+                              className="text-[11.5px] font-medium px-2 py-0.5 rounded bg-[#F7F8FA] border border-[#BDC4D0] text-[#09090B]"
                             >
                               {f}
                             </span>
@@ -152,7 +152,11 @@ export const AuditTrailDrawer: React.FC<AuditTrailDrawerProps> = ({
                       )}
 
                       {m.caveats.length > 0 && (
-                        <div className="border-l-2 border-l-[#FF0F5B] pl-3 py-0.5 space-y-1">
+                        <div className="rounded border border-[#E5E7EB] bg-[#FFF5F8] px-3 py-2.5 space-y-1.5">
+                          <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#09090B]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#FF0F5B]" />
+                            <span>Metric Caveats</span>
+                          </div>
                           {m.caveats.map((caveat, cIdx) => (
                             <p
                               key={cIdx}
@@ -172,14 +176,14 @@ export const AuditTrailDrawer: React.FC<AuditTrailDrawerProps> = ({
             {/* 2. Compiled SQL */}
             <section className="px-5 py-4 space-y-2.5">
               <div className="flex items-center justify-between">
-                <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-[#4B5563]">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#4B5563]">
                   02 / Compiled SQL
                 </span>
                 {auditTrail.compiled_sql && (
                   <button
                     type="button"
                     onClick={handleCopySql}
-                    className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold px-2 py-1 rounded border border-[#BDC4D0] bg-[#FFFFFF] text-[#09090B] hover:border-[#67689E] transition-colors"
+                    className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold px-2 py-1 rounded border border-[#BDC4D0] bg-[#FFFFFF] text-[#09090B] hover:border-[#09090B] transition-colors"
                   >
                     {copied ? (
                       <>
@@ -197,7 +201,7 @@ export const AuditTrailDrawer: React.FC<AuditTrailDrawerProps> = ({
               </div>
 
               {auditTrail.compiled_sql ? (
-                <pre className="sql-code-block rounded p-3 overflow-x-auto whitespace-pre-wrap break-words max-h-60">
+                <pre className="sql-code-block font-mono rounded p-3 overflow-x-auto whitespace-pre-wrap break-words max-h-60">
                   <code>{auditTrail.compiled_sql}</code>
                 </pre>
               ) : (
@@ -208,13 +212,13 @@ export const AuditTrailDrawer: React.FC<AuditTrailDrawerProps> = ({
 
               {auditTrail.tables_accessed.length > 0 && (
                 <div className="flex items-center flex-wrap gap-1.5 pt-1">
-                  <span className="text-[11px] font-medium text-[#4B5563]">
+                  <span className="text-[11.5px] font-medium text-[#4B5563]">
                     Tables:
                   </span>
                   {auditTrail.tables_accessed.map((tbl) => (
                     <span
                       key={tbl}
-                      className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-[#F7F8FA] border border-[#E5E7EB] text-[#09090B]"
+                      className="text-[11.5px] font-medium px-2 py-0.5 rounded bg-[#F7F8FA] border border-[#E5E7EB] text-[#09090B]"
                     >
                       {tbl}
                     </span>
@@ -226,15 +230,17 @@ export const AuditTrailDrawer: React.FC<AuditTrailDrawerProps> = ({
             {/* 3. SQL Guardrails Checklist */}
             {auditTrail.guardrail_checks.length > 0 && (
               <section className="px-5 py-4 space-y-2.5">
-                <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-[#4B5563]">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#4B5563]">
                   03 / SQL AST Guardrails
                 </div>
-                <div className="divide-y divide-[#E5E7EB] border-t border-b border-[#E5E7EB]">
+                <div className="space-y-2">
                   {auditTrail.guardrail_checks.map((check) => (
                     <div
                       key={check.name}
-                      className={`py-2.5 flex items-start gap-2.5 ${
-                        !check.passed ? 'border-l-2 border-l-[#FF0F5B] pl-2.5' : ''
+                      className={`rounded border px-3 py-2.5 flex items-start gap-2.5 ${
+                        check.passed
+                          ? 'bg-[#FFFFFF] border-[#E5E7EB]'
+                          : 'bg-[#FFF5F8] border-[#E5E7EB]'
                       }`}
                     >
                       {check.passed ? (
@@ -243,7 +249,7 @@ export const AuditTrailDrawer: React.FC<AuditTrailDrawerProps> = ({
                         <XCircle className="w-4 h-4 text-[#FF0F5B] shrink-0 mt-0.5" />
                       )}
                       <div className="min-w-0">
-                        <div className="font-mono text-[12px] font-semibold text-[#09090B]">
+                        <div className="text-[12.5px] font-semibold text-[#09090B]">
                           {check.name}
                         </div>
                         <div className="text-[12px] text-[#4B5563] mt-0.5 leading-snug">
@@ -259,10 +265,10 @@ export const AuditTrailDrawer: React.FC<AuditTrailDrawerProps> = ({
             {/* 4. Post-Query Sanity Checks */}
             {auditTrail.sanity_checks.length > 0 && (
               <section className="px-5 py-4 space-y-2.5">
-                <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-[#4B5563]">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#4B5563]">
                   04 / Post-Query Sanity Checks
                 </div>
-                <div className="divide-y divide-[#E5E7EB] border-t border-b border-[#E5E7EB]">
+                <div className="space-y-2">
                   {auditTrail.sanity_checks.map((check) => {
                     const isWarn =
                       !check.passed ||
@@ -271,8 +277,10 @@ export const AuditTrailDrawer: React.FC<AuditTrailDrawerProps> = ({
                     return (
                       <div
                         key={check.name}
-                        className={`py-2.5 flex items-start gap-2.5 ${
-                          isWarn ? 'border-l-2 border-l-[#FF0F5B] pl-2.5' : ''
+                        className={`rounded border px-3 py-2.5 flex items-start gap-2.5 ${
+                          isWarn
+                            ? 'bg-[#FFF5F8] border-[#E5E7EB]'
+                            : 'bg-[#FFFFFF] border-[#E5E7EB]'
                         }`}
                       >
                         {isWarn ? (
@@ -281,7 +289,7 @@ export const AuditTrailDrawer: React.FC<AuditTrailDrawerProps> = ({
                           <CheckCircle2 className="w-4 h-4 text-[#5BC2F4] shrink-0 mt-0.5" />
                         )}
                         <div className="min-w-0">
-                          <div className="font-mono text-[12px] font-semibold text-[#09090B]">
+                          <div className="text-[12.5px] font-semibold text-[#09090B]">
                             {check.name}
                           </div>
                           <div className="text-[12px] text-[#4B5563] mt-0.5 leading-snug">

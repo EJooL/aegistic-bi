@@ -1,7 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ArrowRight,
-  AlertTriangle,
   Pin,
   Check,
   PanelRightOpen,
@@ -10,6 +8,7 @@ import {
   ArrowUpDown,
   ExternalLink,
   Search,
+  ShieldAlert,
 } from 'lucide-react';
 import {
   runQuery,
@@ -17,6 +16,8 @@ import {
   formatValue,
   isNumericFormat,
   normalizeSuggestion,
+  formatEditorialWarning,
+  hasPartialPeriodWarning,
   type ParserMode,
   type QueryResponse,
 } from '../lib/api';
@@ -66,6 +67,34 @@ const SAMPLE_QUERIES: {
   },
 ];
 
+const DANGEROUS_SQL_PATTERN =
+  /(DROP\s+TABLE|DROP\s+DATABASE|DELETE\s+FROM|TRUNCATE\s+TABLE|ALTER\s+TABLE|CROSS\s+JOIN|bronze\.[a-zA-Z0-9_]+|silver\.[a-zA-Z0-9_]+|\bDROP\b|\bDELETE\b|\bUPDATE\b|\bINSERT\b|\bALTER\b|\bCOPY\b|\bATTACH\b)/gi;
+
+function renderHighlightedSqlSnippet(snippet: string): React.ReactNode {
+  const parts = snippet.split(DANGEROUS_SQL_PATTERN);
+  return parts.map((part, idx) => {
+    if (!part) return null;
+    const isDangerous = new RegExp(`^${DANGEROUS_SQL_PATTERN.source}$`, 'i').test(
+      part
+    );
+    if (isDangerous) {
+      return (
+        <span
+          key={idx}
+          className="px-1.5 py-0.5 rounded bg-[#FF0F5B] text-[#FFFFFF] font-semibold"
+        >
+          {part}
+        </span>
+      );
+    }
+    return (
+      <span key={idx} className="text-[#D1D5DB]">
+        {part}
+      </span>
+    );
+  });
+}
+
 export const QueryWorkspace: React.FC<QueryWorkspaceProps> = ({
   externalQuestion,
   onExternalQuestionConsumed,
@@ -78,7 +107,7 @@ export const QueryWorkspace: React.FC<QueryWorkspaceProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [response, setResponse] = useState<QueryResponse | null>(null);
 
-  // Audit Trail Drawer MUST start collapsed by default (eliminates double empty state)
+  // Audit Trail Drawer starts collapsed by default (eliminates double empty state)
   const [isAuditOpen, setIsAuditOpen] = useState(false);
 
   const [pinState, setPinState] = useState<'idle' | 'pinning' | 'pinned' | 'error'>('idle');
@@ -189,11 +218,21 @@ export const QueryWorkspace: React.FC<QueryWorkspaceProps> = ({
   const guardrailTotalCount =
     response?.audit_trail?.guardrail_checks.length ?? 0;
 
+  const editorialWarnings = useMemo(
+    () => (response?.warnings ?? []).map((w) => formatEditorialWarning(w)),
+    [response?.warnings]
+  );
+
+  const partialPeriodActive = useMemo(
+    () => hasPartialPeriodWarning(response?.warnings),
+    [response?.warnings]
+  );
+
   return (
     <div className="flex flex-1 min-w-0 min-h-screen bg-[#FFFFFF]">
       {/* Center Analytics Canvas */}
       <div className="flex-1 min-w-0 flex flex-col">
-        {/* Clean Minimal Top Header (Zero technical metadata clutter) */}
+        {/* Clean Minimal Top Header */}
         <header className="sticky top-0 z-10 bg-[#FFFFFF] border-b border-[#E5E7EB] px-8 h-[68px] flex items-center justify-between gap-4">
           <div className="min-w-0">
             <h1 className="font-display text-[20px] font-bold text-[#09090B] leading-tight">
@@ -204,20 +243,20 @@ export const QueryWorkspace: React.FC<QueryWorkspaceProps> = ({
           <button
             type="button"
             onClick={() => setIsAuditOpen((prev) => !prev)}
-            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded border text-[12.5px] font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-[#67689E] ${
+            className={`inline-flex items-center gap-2 px-3.5 py-2 rounded border text-[12.5px] font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-[#FF0F5B] ${
               isAuditOpen
-                ? 'border-[#67689E] bg-[#F7F8FA] text-[#09090B]'
+                ? 'border-[#09090B] bg-[#F7F8FA] text-[#09090B]'
                 : 'border-[#BDC4D0] bg-[#FFFFFF] text-[#09090B] hover:border-[#09090B]'
             }`}
           >
             {isAuditOpen ? (
-              <PanelRightClose className="w-4 h-4 text-[#67689E]" />
+              <PanelRightClose className="w-4 h-4 text-[#FF0F5B]" />
             ) : (
               <PanelRightOpen className="w-4 h-4 text-[#4B5563]" />
             )}
             <span>Inspect Audit Trail</span>
             {guardrailTotalCount > 0 && (
-              <span className="inline-flex items-center gap-1.5 font-mono text-[11px] tabular-nums pl-1.5 border-l border-[#E5E7EB]">
+              <span className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold tabular-nums pl-1.5 border-l border-[#E5E7EB]">
                 <span
                   className={`w-1.5 h-1.5 rounded-full ${
                     guardrailPassedCount === guardrailTotalCount
@@ -243,14 +282,14 @@ export const QueryWorkspace: React.FC<QueryWorkspaceProps> = ({
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
                   placeholder="Ask a governed question in Indonesian or English..."
-                  className="w-full pl-10 pr-4 py-3 rounded border border-[#09090B] bg-[#FFFFFF] text-[14px] text-[#09090B] placeholder:text-[#4B5563] focus:outline-none focus:border-[#67689E] focus:ring-1 focus:ring-[#67689E]"
+                  className="w-full pl-10 pr-4 py-3 rounded border border-[#09090B] bg-[#FFFFFF] text-[14px] text-[#09090B] placeholder:text-[#4B5563] focus:outline-none focus:border-[#FF0F5B] focus:ring-1 focus:ring-[#FF0F5B]"
                   disabled={loading}
                 />
               </div>
               <button
                 type="submit"
                 disabled={loading || !question.trim()}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded bg-[#67689E] hover:bg-[#545588] disabled:opacity-60 disabled:cursor-not-allowed text-[#FFFFFF] text-[14px] font-semibold transition-colors shrink-0 focus:outline-none focus:ring-2 focus:ring-[#67689E] focus:ring-offset-1"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded bg-[#FF0F5B] hover:bg-[#DC0A4D] active:bg-[#BE0842] disabled:opacity-60 disabled:cursor-not-allowed text-[#FFFFFF] text-[14px] font-semibold transition-colors shrink-0 focus:outline-none focus:ring-2 focus:ring-[#FF0F5B] focus:ring-offset-1"
               >
                 {loading ? (
                   <>
@@ -258,10 +297,7 @@ export const QueryWorkspace: React.FC<QueryWorkspaceProps> = ({
                     <span>Running</span>
                   </>
                 ) : (
-                  <>
-                    <span>Run Query</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
+                  <span>Run Query →</span>
                 )}
               </button>
             </form>
@@ -274,14 +310,14 @@ export const QueryWorkspace: React.FC<QueryWorkspaceProps> = ({
                   type="button"
                   disabled={loading}
                   onClick={() => void executeQuestion(item.question, { openAudit: true })}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded border border-[#BDC4D0] bg-[#FFFFFF] hover:border-[#09090B] hover:bg-[#F7F8FA] text-left transition-colors focus:outline-none focus:border-[#67689E]"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded border border-[#BDC4D0] bg-[#FFFFFF] hover:border-[#09090B] hover:bg-[#F7F8FA] text-left transition-colors focus:outline-none focus:border-[#FF0F5B]"
                 >
                   <span
                     className="w-1.5 h-1.5 rounded-full shrink-0"
                     style={{ backgroundColor: item.dotColor }}
                     aria-hidden="true"
                   />
-                  <span className="font-mono text-[11px] font-semibold uppercase tracking-wide text-[#4B5563]">
+                  <span className="text-[11.5px] font-semibold text-[#4B5563]">
                     {item.tag}
                   </span>
                   <span className="text-[12.5px] font-medium text-[#09090B]">
@@ -292,15 +328,15 @@ export const QueryWorkspace: React.FC<QueryWorkspaceProps> = ({
             </div>
           </section>
 
-          {/* Network Error Alert */}
+          {/* Network Error Strip (Dark Obsidian) */}
           {error && (
-            <div className="rounded border border-[#E5E7EB] border-l-4 border-l-[#FF0F5B] bg-[#FFFFFF] px-5 py-4 flex items-start gap-3">
-              <AlertTriangle className="w-4 h-4 text-[#FF0F5B] shrink-0 mt-0.5" />
+            <div className="rounded-md bg-[#09090B] text-[#FFFFFF] px-5 py-4 flex items-start gap-3">
+              <span className="w-2 h-2 rounded-full bg-[#FF0F5B] shrink-0 mt-1.5" />
               <div className="min-w-0">
-                <div className="text-[13.5px] font-bold text-[#09090B]">
+                <div className="text-[13.5px] font-bold text-[#FFFFFF]">
                   Query Request Failed
                 </div>
-                <p className="text-[13px] text-[#4B5563] mt-0.5">{error}</p>
+                <p className="text-[13px] text-[#D1D5DB] mt-0.5">{error}</p>
               </div>
             </div>
           )}
@@ -308,7 +344,7 @@ export const QueryWorkspace: React.FC<QueryWorkspaceProps> = ({
           {/* Loading State */}
           {loading && (
             <div className="border-t border-[#E5E7EB] pt-10 pb-10 flex items-center gap-3 text-[#4B5563]">
-              <Loader2 className="w-4 h-4 text-[#67689E] animate-spin" />
+              <Loader2 className="w-4 h-4 text-[#FF0F5B] animate-spin" />
               <span className="text-[13.5px] font-medium text-[#09090B]">
                 Compiling semantic query plan &amp; verifying SQL AST...
               </span>
@@ -324,11 +360,11 @@ export const QueryWorkspace: React.FC<QueryWorkspaceProps> = ({
                   <div className="border-t border-b border-[#E5E7EB] py-4 flex flex-wrap items-center justify-between gap-4">
                     <div className="space-y-1 min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-3">
-                        <span className="inline-flex items-center gap-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.06em] text-[#09090B]">
+                        <span className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold uppercase tracking-[0.05em] text-[#09090B]">
                           <span className="w-2 h-2 rounded-full bg-[#5BC2F4]" />
                           Verified by Semantic Layer
                         </span>
-                        <span className="font-mono text-[11.5px] text-[#4B5563] tabular-nums">
+                        <span className="text-[12px] font-medium text-[#4B5563] tabular-nums">
                           {response.audit_trail.row_count} rows ·{' '}
                           {response.audit_trail.latency_ms.toFixed(1)} ms
                         </span>
@@ -359,7 +395,7 @@ export const QueryWorkspace: React.FC<QueryWorkspaceProps> = ({
                           type="button"
                           onClick={handlePin}
                           disabled={pinState === 'pinning'}
-                          className="inline-flex items-center gap-2 px-4 py-2 rounded bg-[#67689E] hover:bg-[#545588] disabled:opacity-60 text-[#FFFFFF] text-[13px] font-semibold transition-colors"
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded bg-[#FF0F5B] hover:bg-[#DC0A4D] active:bg-[#BE0842] disabled:opacity-60 text-[#FFFFFF] text-[13px] font-semibold transition-colors"
                         >
                           {pinState === 'pinning' ? (
                             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -373,55 +409,66 @@ export const QueryWorkspace: React.FC<QueryWorkspaceProps> = ({
                   </div>
 
                   {pinError && (
-                    <div className="rounded border border-[#E5E7EB] border-l-4 border-l-[#FF0F5B] px-4 py-2.5 text-[12.5px] text-[#09090B]">
-                      {pinError}
+                    <div className="rounded bg-[#FFF5F8] border border-[#E5E7EB] px-4 py-2.5 text-[12.5px] text-[#09090B] flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#FF0F5B] shrink-0" />
+                      <span>{pinError}</span>
                     </div>
                   )}
 
-                  {/* Inline Crimson Caveat & Post-Query Sanity Warnings */}
-                  {response.warnings.length > 0 && (
-                    <div className="space-y-2">
-                      {response.warnings.map((warn, idx) => (
-                        <div
-                          key={`${warn.code}-${idx}`}
-                          className="rounded border border-[#E5E7EB] border-l-4 border-l-[#FF0F5B] bg-[#FFFFFF] px-4 py-3 flex items-start gap-3"
-                        >
-                          <AlertTriangle className="w-4 h-4 text-[#FF0F5B] shrink-0 mt-0.5" />
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-[13px] font-bold text-[#09090B]">
-                                {warn.title}
-                              </span>
-                              <span className="font-mono text-[10.5px] font-semibold px-1.5 py-0.5 rounded bg-[#F7F8FA] border border-[#BDC4D0] text-[#4B5563]">
-                                {warn.code}
-                              </span>
-                            </div>
-                            <p className="text-[12.5px] text-[#4B5563] mt-0.5 leading-relaxed">
-                              {warn.message}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Flat Primary Visualization Section */}
-                  <section className="rounded-md border border-[#BDC4D0] bg-[#FFFFFF] p-5">
-                    <div className="flex items-center justify-between gap-3 pb-4 mb-4 border-b border-[#E5E7EB]">
+                  {/* Flat Primary Visualization Frame with Docked Tier-A Sanity Band */}
+                  <section className="rounded-md border border-[#BDC4D0] bg-[#FFFFFF] overflow-hidden">
+                    {/* Chart Title Bar */}
+                    <div className="px-5 py-4 border-b border-[#E5E7EB] flex items-center justify-between gap-3">
                       <h2 className="font-display text-[16px] font-bold text-[#09090B] truncate">
                         {response.chart_spec?.title || 'Query Visualization'}
                       </h2>
                       {response.chart_spec && (
-                        <span className="font-mono text-[11px] uppercase px-2 py-0.5 rounded bg-[#F7F8FA] border border-[#E5E7EB] text-[#4B5563]">
+                        <span className="text-[11.5px] font-semibold uppercase tracking-[0.04em] px-2 py-0.5 rounded bg-[#F7F8FA] border border-[#E5E7EB] text-[#4B5563]">
                           {response.chart_spec.chart_type}
                         </span>
                       )}
                     </div>
-                    <ChartRenderer
-                      chartSpec={response.chart_spec}
-                      columns={response.columns}
-                      data={response.data}
-                    />
+
+                    {/* Tier A — Docked Contextual Data Sanity Caveat Strip (zero left stripe, zero raw enum) */}
+                    {editorialWarnings.length > 0 && (
+                      <div className="divide-y divide-[#E5E7EB] border-b border-[#E5E7EB] bg-[#FFF5F8]">
+                        {editorialWarnings.map((warn, idx) => (
+                          <div
+                            key={`${warn.label}-${idx}`}
+                            className="px-5 py-2.5 flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5"
+                          >
+                            <div className="flex items-center gap-2.5 shrink-0">
+                              <span
+                                className="relative flex h-2 w-2 shrink-0"
+                                aria-hidden="true"
+                              >
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FF0F5B] opacity-60" />
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#FF0F5B]" />
+                              </span>
+                              <span className="text-[12.5px] font-bold text-[#09090B]">
+                                {warn.label}
+                              </span>
+                              <span className="px-2 py-0.5 rounded bg-[#FFFFFF] border border-[#E5E7EB] text-[11.5px] font-semibold text-[#09090B] tabular-nums">
+                                {warn.pill}
+                              </span>
+                            </div>
+                            <p className="text-[12.5px] text-[#4B5563] leading-snug">
+                              {warn.message}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Chart Body */}
+                    <div className="p-5">
+                      <ChartRenderer
+                        chartSpec={response.chart_spec}
+                        columns={response.columns}
+                        data={response.data}
+                        hasPartialPeriod={partialPeriodActive}
+                      />
+                    </div>
                   </section>
 
                   {/* Flat Sortable Data Table */}
@@ -431,14 +478,14 @@ export const QueryWorkspace: React.FC<QueryWorkspaceProps> = ({
                         <div className="flex items-center justify-between">
                           <h3 className="font-display text-[14.5px] font-bold text-[#09090B]">
                             Verified Data Table{' '}
-                            <span className="font-mono text-[12px] font-normal text-[#4B5563] tabular-nums">
+                            <span className="text-[12.5px] font-medium text-[#4B5563] tabular-nums">
                               ({response.data.length} rows)
                             </span>
                           </h3>
                           <button
                             type="button"
                             onClick={() => setShowTableSection((prev) => !prev)}
-                            className="text-[12px] font-semibold text-[#67689E] hover:text-[#545588]"
+                            className="text-[12.5px] font-semibold text-[#09090B] hover:text-[#FF0F5B]"
                           >
                             {showTableSection ? 'Hide table' : 'Show table'}
                           </button>
@@ -455,7 +502,7 @@ export const QueryWorkspace: React.FC<QueryWorkspaceProps> = ({
                                     return (
                                       <th
                                         key={col.key}
-                                        className={`px-4 py-2.5 text-[11px] font-mono font-semibold uppercase tracking-[0.06em] text-[#4B5563] whitespace-nowrap ${
+                                        className={`px-4 py-2.5 text-[11.5px] font-semibold uppercase tracking-[0.05em] text-[#4B5563] whitespace-nowrap ${
                                           numeric ? 'text-right' : 'text-left'
                                         }`}
                                       >
@@ -506,56 +553,77 @@ export const QueryWorkspace: React.FC<QueryWorkspaceProps> = ({
                     )}
                 </>
               ) : (
-                /* GUARDRAIL BLOCKED / CLARIFICATION REQUIRED / REFUSED ALERT */
-                <section className="rounded border border-[#E5E7EB] border-l-4 border-l-[#FF0F5B] bg-[#FFFFFF] p-6 space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded bg-[#FF0F5B] text-[#FFFFFF] font-mono text-[11px] font-bold uppercase tracking-[0.06em]">
-                        {response.status === 'guardrail_blocked'
-                          ? 'BLOCKED BY AST GUARDRAIL'
-                          : response.status === 'clarification_required'
-                            ? 'CLARIFICATION REQUIRED'
-                            : 'OUT OF SCOPE · REFUSED'}
-                      </span>
-                      <span className="font-mono text-[12px] text-[#4B5563] tabular-nums">
-                        {response.audit_trail.latency_ms.toFixed(1)} ms
-                      </span>
-                    </div>
-
-                    <h2 className="font-display text-[18px] font-bold text-[#09090B]">
+                /* TIER B — DARK OBSIDIAN INTERCEPTION CARD (Guardrail Block / Ambiguous / Refusal) */
+                <section className="rounded-md bg-[#09090B] text-[#FFFFFF] p-6 space-y-4">
+                  {/* Top Badge + Telemetry Row */}
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-[#FF0F5B] text-[#FFFFFF] text-[11.5px] font-bold">
+                      <ShieldAlert className="w-3.5 h-3.5" />
                       {response.status === 'guardrail_blocked'
-                        ? 'Request Blocked by SQL AST Security Policy'
+                        ? 'AST Guardrail Blocked'
+                        : response.status === 'clarification_required'
+                          ? 'Clarification Required'
+                          : 'Out of Scope'}
+                    </span>
+
+                    <span className="text-[12px] font-medium text-[#9CA3AF] tabular-nums">
+                      {response.status === 'guardrail_blocked'
+                        ? 'Gate 3 · 0 rows touched'
+                        : 'Gate 1 · 0 rows touched'}{' '}
+                      · {response.audit_trail.latency_ms.toFixed(1)} ms
+                    </span>
+                  </div>
+
+                  {/* Crisp White Heading & High-Contrast Summary */}
+                  <div className="space-y-1.5">
+                    <h2 className="font-display text-[18px] font-bold text-[#FFFFFF]">
+                      {response.status === 'guardrail_blocked'
+                        ? 'Request Intercepted by SQL AST Security Policy'
                         : response.status === 'clarification_required'
                           ? 'Ambiguous Business Metric Detected'
                           : 'Metric Not Governed in Semantic Layer'}
                     </h2>
-
-                    <p className="text-[14px] text-[#4B5563] leading-relaxed">
+                    <p className="text-[14px] text-[#D1D5DB] leading-relaxed">
                       {response.summary}
                     </p>
                   </div>
 
-                  {response.warnings.length > 0 && (
-                    <div className="space-y-2 border-t border-[#E5E7EB] pt-3">
-                      {response.warnings.map((w, idx) => (
+                  {/* Highlighted Blocked SQL / Adversarial Snippet */}
+                  {response.status === 'guardrail_blocked' && (
+                    <pre className="font-mono text-[12.5px] leading-relaxed bg-[#18181B] border border-[#27272A] rounded px-4 py-3 overflow-x-auto whitespace-pre-wrap break-words">
+                      <code>
+                        {renderHighlightedSqlSnippet(
+                          response.audit_trail.compiled_sql || response.question
+                        )}
+                      </code>
+                    </pre>
+                  )}
+
+                  {/* Secondary Policy Notes (Humanized, never raw enum code) */}
+                  {editorialWarnings.length > 0 && (
+                    <div className="space-y-2">
+                      {editorialWarnings.map((w, idx) => (
                         <div
-                          key={`${w.code}-${idx}`}
-                          className="text-[12.5px] text-[#09090B] bg-[#F7F8FA] border border-[#E5E7EB] rounded px-3.5 py-2.5"
+                          key={`${w.label}-${idx}`}
+                          className="rounded bg-[#18181B] border border-[#27272A] px-3.5 py-2.5 text-[12.5px] text-[#D1D5DB] flex items-start gap-2.5"
                         >
-                          <span className="font-mono text-[11px] font-bold text-[#FF0F5B] mr-2">
-                            [{w.code}]
-                          </span>
-                          <span className="font-semibold">{w.title}:</span>{' '}
-                          <span className="text-[#4B5563]">{w.message}</span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#FF0F5B] shrink-0 mt-1.5" />
+                          <div>
+                            <span className="font-semibold text-[#FFFFFF]">
+                              {w.label}:
+                            </span>{' '}
+                            <span>{w.message}</span>
+                          </div>
                         </div>
                       ))}
                     </div>
                   )}
 
+                  {/* Dark-Surface Quick-Refinement Suggestions */}
                   {response.suggestions.length > 0 && (
-                    <div className="pt-3 border-t border-[#E5E7EB] space-y-2.5">
-                      <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.06em] text-[#4B5563]">
-                        Official Governed Query Suggestions
+                    <div className="pt-3 border-t border-[#27272A] space-y-2.5">
+                      <div className="text-[11.5px] font-semibold uppercase tracking-[0.05em] text-[#9CA3AF]">
+                        Recover with a Governed Metric Query
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {response.suggestions.map((rawItem, idx) => {
@@ -568,9 +636,9 @@ export const QueryWorkspace: React.FC<QueryWorkspaceProps> = ({
                               onClick={() =>
                                 void executeQuestion(s.question, { openAudit: true })
                               }
-                              className="inline-flex items-center gap-2 px-3 py-1.5 rounded border border-[#BDC4D0] bg-[#FFFFFF] hover:border-[#67689E] hover:bg-[#F7F8FA] text-[12.5px] font-semibold text-[#09090B] transition-colors"
+                              className="inline-flex items-center gap-2 px-3 py-2 rounded bg-[#18181B] border border-[#27272A] hover:border-[#FF0F5B] text-[12.5px] font-semibold text-[#FFFFFF] transition-colors"
                             >
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#5BC2F4]" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#5BC2F4] shrink-0" />
                               <span>{s.label}</span>
                             </button>
                           );

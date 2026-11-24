@@ -1,5 +1,5 @@
 /* Aegistic Design System — Swiss Geometric Editorial Modern
- * Strict locked hex palette: flat surfaces, high-contrast typography, zero gradients.
+ * Strict locked hex palette: flat surfaces, high-contrast sans typography, vibrant pink CTAs.
  */
 
 :root {
@@ -11,15 +11,17 @@
   --color-text-primary: #09090B;
   --color-text-secondary: #4B5563;
 
-  /* Brand Primary & Solid CTA (Slate Indigo) */
-  --color-brand: #67689E;
-  --color-brand-hover: #545588;
+  /* Primary Brand Accent & Solid CTAs (Vibrant Crimson Pink) */
+  --color-accent: #FF0F5B;
+  --color-cta: #FF0F5B;
+  --color-cta-hover: #DC0A4D;
+  --color-cta-active: #BE0842;
 
   /* Primary Data Viz & Verified Accent (Bright Sky Blue) */
   --color-sky: #5BC2F4;
 
-  /* Guardrail Alert, Block, Adversarial SQL & Accent (Vibrant Crimson) */
-  --color-crimson: #FF0F5B;
+  /* Secondary / Supporting Series & Tags (Slate Indigo) */
+  --color-secondary: #67689E;
 
   /* Structural Borders & Gridlines (Never used for body copy) */
   --color-border-strong: #BDC4D0;
@@ -33,9 +35,9 @@
   --color-series-5: #BDC4D0;
 
   /* Font Families */
-  --font-display: 'Space Grotesk', 'Inter', ui-sans-serif, system-ui, sans-serif;
-  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-display: 'Space Grotesk', 'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-code: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
   /* Layout Dimensions */
   --sidebar-width: 240px;

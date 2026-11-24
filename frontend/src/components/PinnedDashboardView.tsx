@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useState } from 'react';
 import {
   RefreshCw,
   Trash2,
-  AlertTriangle,
   ArrowUpRight,
   ArrowRight,
   Loader2,
@@ -12,6 +11,8 @@ import {
   refreshDashboardCard,
   deleteDashboardCard,
   formatTimestamp,
+  formatEditorialWarning,
+  hasPartialPeriodWarning,
   type DashboardCard,
 } from '../lib/api';
 import { ChartRenderer } from './ChartRenderer';
@@ -127,7 +128,7 @@ export const PinnedDashboardView: React.FC<PinnedDashboardViewProps> = ({
               className="inline-flex items-center gap-2 px-3.5 py-2 rounded border border-[#BDC4D0] bg-[#FFFFFF] hover:border-[#09090B] text-[13px] font-semibold text-[#09090B] transition-colors disabled:opacity-50"
             >
               <RefreshCw
-                className={`w-3.5 h-3.5 text-[#67689E] ${
+                className={`w-3.5 h-3.5 text-[#09090B] ${
                   refreshingAll ? 'animate-spin' : ''
                 }`}
               />
@@ -137,7 +138,7 @@ export const PinnedDashboardView: React.FC<PinnedDashboardViewProps> = ({
           <button
             type="button"
             onClick={() => onAskQuestion('')}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded bg-[#67689E] hover:bg-[#545588] text-[#FFFFFF] text-[13px] font-semibold transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded bg-[#FF0F5B] hover:bg-[#DC0A4D] active:bg-[#BE0842] text-[#FFFFFF] text-[13px] font-semibold transition-colors"
           >
             <span>New Query</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -147,15 +148,15 @@ export const PinnedDashboardView: React.FC<PinnedDashboardViewProps> = ({
 
       <div className="flex-1 px-8 py-6 max-w-[1400px] w-full mx-auto space-y-6">
         {error && (
-          <div className="rounded border border-[#E5E7EB] border-l-4 border-l-[#FF0F5B] bg-[#FFFFFF] px-4 py-3 flex items-center justify-between gap-3 text-[13px] text-[#09090B]">
+          <div className="rounded-md bg-[#09090B] text-[#FFFFFF] px-4 py-3 flex items-center justify-between gap-3 text-[13px]">
             <div className="flex items-center gap-2.5">
-              <AlertTriangle className="w-4 h-4 text-[#FF0F5B] shrink-0" />
+              <span className="w-2 h-2 rounded-full bg-[#FF0F5B] shrink-0" />
               <span>{error}</span>
             </div>
             <button
               type="button"
               onClick={() => void loadCards()}
-              className="font-semibold text-[#67689E] hover:underline shrink-0"
+              className="font-semibold text-[#FF0F5B] hover:underline shrink-0"
             >
               Retry
             </button>
@@ -164,14 +165,14 @@ export const PinnedDashboardView: React.FC<PinnedDashboardViewProps> = ({
 
         {loading ? (
           <div className="py-12 flex items-center gap-3 text-[#4B5563]">
-            <Loader2 className="w-4 h-4 text-[#67689E] animate-spin" />
+            <Loader2 className="w-4 h-4 text-[#FF0F5B] animate-spin" />
             <span className="text-[13.5px] font-medium text-[#09090B]">
               Loading live dashboard panels...
             </span>
           </div>
         ) : cards.length === 0 ? (
-          <div className="border-t-2 border-t-[#67689E] border border-[#E5E7EB] rounded-md p-8 max-w-lg mt-4 space-y-4">
-            <div className="font-mono text-[11px] uppercase tracking-[0.08em] text-[#4B5563]">
+          <div className="border-t-2 border-t-[#FF0F5B] border border-[#E5E7EB] rounded-md p-8 max-w-lg mt-4 space-y-4">
+            <div className="text-[11.5px] font-semibold uppercase tracking-[0.06em] text-[#4B5563]">
               Live Persistence
             </div>
             <h2 className="font-display text-[20px] font-bold text-[#09090B]">
@@ -185,9 +186,9 @@ export const PinnedDashboardView: React.FC<PinnedDashboardViewProps> = ({
             <button
               type="button"
               onClick={() => onAskQuestion('')}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded bg-[#67689E] hover:bg-[#545588] text-[#FFFFFF] text-[13.5px] font-semibold transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded bg-[#FF0F5B] hover:bg-[#DC0A4D] active:bg-[#BE0842] text-[#FFFFFF] text-[13.5px] font-semibold transition-colors"
             >
-              <span>Open Ask Aegistic</span>
+              <span>Ask Aegistic</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
@@ -197,6 +198,11 @@ export const PinnedDashboardView: React.FC<PinnedDashboardViewProps> = ({
               const isRefreshing = Boolean(refreshingIds[card.id]);
               const isDeleting = Boolean(deletingIds[card.id]);
               const res = card.response;
+              const primaryWarning =
+                res.warnings && res.warnings.length > 0
+                  ? formatEditorialWarning(res.warnings[0])
+                  : null;
+              const partialActive = hasPartialPeriodWarning(res.warnings);
 
               return (
                 <article
@@ -234,10 +240,10 @@ export const PinnedDashboardView: React.FC<PinnedDashboardViewProps> = ({
                         title="Refresh live from DuckDB"
                         disabled={isRefreshing || isDeleting}
                         onClick={() => void handleRefreshCard(card.id)}
-                        className="p-1.5 rounded text-[#4B5563] hover:text-[#67689E] hover:bg-[#F7F8FA] transition-colors disabled:opacity-50"
+                        className="p-1.5 rounded text-[#4B5563] hover:text-[#09090B] hover:bg-[#F7F8FA] transition-colors disabled:opacity-50"
                       >
                         <RefreshCw
-                          className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-[#67689E]' : ''}`}
+                          className={`w-4 h-4 ${isRefreshing ? 'animate-spin text-[#FF0F5B]' : ''}`}
                         />
                       </button>
                       <button
@@ -252,13 +258,24 @@ export const PinnedDashboardView: React.FC<PinnedDashboardViewProps> = ({
                     </div>
                   </div>
 
-                  {/* Warning Strip */}
-                  {res.warnings && res.warnings.length > 0 && (
-                    <div className="px-5 py-2 border-b border-[#E5E7EB] border-l-4 border-l-[#FF0F5B] bg-[#F7F8FA] flex items-center gap-2 text-[12px] text-[#09090B]">
-                      <AlertTriangle className="w-3.5 h-3.5 text-[#FF0F5B] shrink-0" />
-                      <span className="font-semibold">{res.warnings[0].title}:</span>
-                      <span className="text-[#4B5563] truncate">
-                        {res.warnings[0].message}
+                  {/* Docked Tier-A Sanity Band (Zero left border stripe, humanized pill) */}
+                  {primaryWarning && (
+                    <div className="px-5 py-2 border-b border-[#E5E7EB] bg-[#FFF5F8] flex flex-wrap items-center gap-2 text-[12px]">
+                      <span
+                        className="relative flex h-2 w-2 shrink-0"
+                        aria-hidden="true"
+                      >
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FF0F5B] opacity-60" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-[#FF0F5B]" />
+                      </span>
+                      <span className="font-bold text-[#09090B]">
+                        {primaryWarning.label}
+                      </span>
+                      <span className="px-2 py-0.5 rounded bg-[#FFFFFF] border border-[#E5E7EB] text-[11px] font-semibold text-[#09090B] tabular-nums">
+                        {primaryWarning.pill}
+                      </span>
+                      <span className="text-[#4B5563] truncate flex-1 min-w-[160px]">
+                        {primaryWarning.message}
                       </span>
                     </div>
                   )}
@@ -270,11 +287,12 @@ export const PinnedDashboardView: React.FC<PinnedDashboardViewProps> = ({
                       columns={res.columns}
                       data={res.data}
                       compact
+                      hasPartialPeriod={partialActive}
                     />
                   </div>
 
                   {/* Flat Footer */}
-                  <div className="px-5 py-2.5 bg-[#F7F8FA] border-t border-[#E5E7EB] flex items-center justify-between text-[11.5px] font-mono text-[#4B5563] tabular-nums">
+                  <div className="px-5 py-2.5 bg-[#F7F8FA] border-t border-[#E5E7EB] flex items-center justify-between text-[12px] font-medium text-[#4B5563] tabular-nums">
                     <span>Refreshed {formatTimestamp(card.refreshed_at)}</span>
                     <span>
                       {res.audit_trail.row_count} rows ·{' '}
