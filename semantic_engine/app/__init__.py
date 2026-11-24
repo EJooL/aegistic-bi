@@ -1,0 +1,1 @@
+"""Aegistic FastAPI application package."""
