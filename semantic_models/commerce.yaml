@@ -1,0 +1,428 @@
+# ============================================================================
+# Aegistic Semantic Layer — Nusantara Commerce Metrics-as-Code Contract
+# ============================================================================
+
+model_name: nusantara_commerce
+display_name: Nusantara Commerce Semantic Model
+version: "1.0.0"
+currency: IDR
+description: Governed metrics-as-code semantic layer for Nusantara Commerce omnichannel retail.
+reference_date: "2026-11-24"
+
+# ----------------------------------------------------------------------------
+# Gold Star Schema Tables & Governed Join Paths
+# ----------------------------------------------------------------------------
+tables:
+  gold.fact_orders:
+    alias: fo
+    role: fact
+    grain: order
+    primary_key: order_id
+    description: Order-level fact table (1 row per deduplicated order with completed-only order_rank).
+  gold.fact_order_items:
+    alias: foi
+    role: fact
+    grain: order_item
+    primary_key: order_item_id
+    description: Line-item fact table (1 row per order line item with unit cost and item-level revenue).
+  gold.dim_products:
+    alias: dp
+    role: dimension
+    grain: product
+    primary_key: product_id
+    description: Product catalog dimension with category, subcategory, and brand.
+  gold.dim_customers:
+    alias: dc
+    role: dimension
+    grain: customer
+    primary_key: customer_id
+    description: Customer dimension with loyalty segment, Indonesian region, city, and first order date.
+  gold.dim_date:
+    alias: dd
+    role: dimension
+    grain: day
+    primary_key: date_day
+    description: Continuous calendar dimension from 2025-06-01 to 2026-11-24 with partial-period flag.
+
+joins:
+  - name: fact_orders_to_dim_customers
+    from_table: gold.fact_orders
+    from_alias: fo
+    to_table: gold.dim_customers
+    to_alias: dc
+    join_type: LEFT
+    relationship: many_to_one
+    on: fo.customer_id = dc.customer_id
+
+  - name: fact_orders_to_dim_date
+    from_table: gold.fact_orders
+    from_alias: fo
+    to_table: gold.dim_date
+    to_alias: dd
+    join_type: LEFT
+    relationship: many_to_one
+    on: fo.order_date = dd.date_day
+
+  - name: fact_order_items_to_fact_orders
+    from_table: gold.fact_order_items
+    from_alias: foi
+    to_table: gold.fact_orders
+    to_alias: fo
+    join_type: INNER
+    relationship: many_to_one
+    on: foi.order_id = fo.order_id
+
+  - name: fact_order_items_to_dim_products
+    from_table: gold.fact_order_items
+    from_alias: foi
+    to_table: gold.dim_products
+    to_alias: dp
+    join_type: LEFT
+    relationship: many_to_one
+    on: foi.product_id = dp.product_id
+
+# ----------------------------------------------------------------------------
+# Official Governed Metrics (7)
+# ----------------------------------------------------------------------------
+metrics:
+  - key: net_revenue
+    label: Net Revenue
+    description: Recognized net revenue from completed orders after discounts, excluding shipping fees and refunds.
+    formula_display: "SUM(gross_amount - discount_amount) WHERE order_status = 'completed'"
+    sql_expression: "SUM(CASE WHEN fo.order_status = 'completed' THEN fo.net_amount ELSE 0 END)"
+    item_grain_sql_expression: "SUM(CASE WHEN fo.order_status = 'completed' THEN foi.item_net_amount ELSE 0 END)"
+    format: currency_idr
+    grain: order
+    base_table: gold.fact_orders
+    mandatory_filters:
+      - "order_status = 'completed'"
+    allowed_dimensions:
+      - order_date
+      - product_category
+      - customer_segment
+      - region
+      - payment_method
+    caveats:
+      - "Excludes shipping cost, cancelled orders, and refunded orders."
+      - "When sliced by product_category, uses item-level net revenue (item_gross_amount - item_discount_amount) on completed orders to prevent join fan-out."
+    synonyms:
+      - net revenue
+      - pendapatan bersih
+      - omzet bersih
+      - revenue
+      - pendapatan
+      - penjualan bersih
+      - net sales
+      - total revenue
+    owner: Finance & BI Governance
+
+  - key: gross_revenue
+    label: Gross Merchandise Value (GMV)
+    description: Total gross merchandise value before discounts across all non-cancelled orders (completed and refunded), excluding shipping fees.
+    formula_display: "SUM(gross_amount) WHERE order_status != 'cancelled'"
+    sql_expression: "SUM(CASE WHEN fo.order_status != 'cancelled' THEN fo.gross_amount ELSE 0 END)"
+    item_grain_sql_expression: "SUM(CASE WHEN fo.order_status != 'cancelled' THEN foi.item_gross_amount ELSE 0 END)"
+    format: currency_idr
+    grain: order
+    base_table: gold.fact_orders
+    mandatory_filters:
+      - "order_status != 'cancelled'"
+    allowed_dimensions:
+      - order_date
+      - product_category
+      - customer_segment
+      - region
+      - payment_method
+    caveats:
+      - "Includes refunded orders and pre-discount merchandise value; excludes cancelled orders and shipping fees."
+      - "When sliced by product_category, aggregates item_gross_amount on non-cancelled orders to prevent join fan-out."
+    synonyms:
+      - gross revenue
+      - gmv
+      - gross merchandise value
+      - pendapatan kotor
+      - omzet kotor
+      - penjualan kotor
+      - gross sales
+    owner: Commercial Analytics
+
+  - key: total_orders
+    label: Completed Orders
+    description: Count of distinct completed orders, excluding cancelled and refunded transactions.
+    formula_display: "COUNT(DISTINCT order_id) WHERE order_status = 'completed'"
+    sql_expression: "COUNT(DISTINCT CASE WHEN fo.order_status = 'completed' THEN fo.order_id END)"
+    item_grain_sql_expression: "COUNT(DISTINCT CASE WHEN fo.order_status = 'completed' THEN foi.order_id END)"
+    format: integer
+    grain: order
+    base_table: gold.fact_orders
+    mandatory_filters:
+      - "order_status = 'completed'"
+    allowed_dimensions:
+      - order_date
+      - product_category
+      - customer_segment
+      - region
+      - payment_method
+    caveats:
+      - "Counts only completed orders; cancelled and refunded orders are excluded."
+      - "When sliced by product_category, a multi-category order is counted once per category it contains (distinct order count per slice)."
+    synonyms:
+      - total orders
+      - completed orders
+      - jumlah pesanan
+      - total pesanan
+      - jumlah order
+      - total order
+      - jumlah transaksi
+      - order count
+      - transaksi selesai
+    owner: Operations & Fulfillment
+
+  - key: aov
+    label: Average Order Value (AOV)
+    description: Average recognized net revenue per completed order.
+    formula_display: "net_revenue / NULLIF(total_orders, 0)"
+    sql_expression: "SUM(CASE WHEN fo.order_status = 'completed' THEN fo.net_amount ELSE 0 END) * 1.0 / NULLIF(COUNT(DISTINCT CASE WHEN fo.order_status = 'completed' THEN fo.order_id END), 0)"
+    item_grain_sql_expression: "SUM(CASE WHEN fo.order_status = 'completed' THEN foi.item_net_amount ELSE 0 END) * 1.0 / NULLIF(COUNT(DISTINCT CASE WHEN fo.order_status = 'completed' THEN foi.order_id END), 0)"
+    format: currency_idr
+    grain: order
+    base_table: gold.fact_orders
+    mandatory_filters:
+      - "order_status = 'completed'"
+    allowed_dimensions:
+      - order_date
+      - product_category
+      - customer_segment
+      - region
+      - payment_method
+    caveats:
+      - "Based on Net Revenue (after discounts, excluding shipping) divided by completed orders."
+      - "When sliced by product_category, represents average category basket value per completed order containing that category."
+    synonyms:
+      - aov
+      - average order value
+      - rata-rata nilai pesanan
+      - rata rata nilai pesanan
+      - rata-rata transaksi
+      - nilai rata-rata order
+      - basket size
+      - average basket
+    owner: Finance & BI Governance
+
+  - key: gross_margin_pct
+    label: Gross Margin (%)
+    description: Gross profit margin percentage on completed orders, calculated as (item net revenue minus COGS) divided by item net revenue.
+    formula_display: "(SUM(item_net_amount - (quantity * unit_cost))) / NULLIF(SUM(item_net_amount), 0) WHERE order_status = 'completed'"
+    sql_expression: "SUM(CASE WHEN fo.order_status = 'completed' THEN foi.item_net_amount - (foi.quantity * foi.unit_cost) ELSE 0 END) * 1.0 / NULLIF(SUM(CASE WHEN fo.order_status = 'completed' THEN foi.item_net_amount ELSE 0 END), 0)"
+    item_grain_sql_expression: "SUM(CASE WHEN fo.order_status = 'completed' THEN foi.item_net_amount - (foi.quantity * foi.unit_cost) ELSE 0 END) * 1.0 / NULLIF(SUM(CASE WHEN fo.order_status = 'completed' THEN foi.item_net_amount ELSE 0 END), 0)"
+    format: percentage
+    grain: order_item
+    base_table: gold.fact_order_items
+    mandatory_filters:
+      - "order_status = 'completed'"
+    allowed_dimensions:
+      - order_date
+      - product_category
+      - customer_segment
+      - region
+      - payment_method
+    caveats:
+      - "Calculated at order_item grain using unit_cost (COGS) and post-discount item_net_amount on completed orders only."
+      - "Excludes shipping cost, payment gateway fees, and marketing expenses."
+    synonyms:
+      - gross margin
+      - gross margin pct
+      - gross margin percentage
+      - margin kotor
+      - marjin kotor
+      - persentase margin
+      - profit margin
+      - margin
+    owner: Finance & Pricing
+
+  - key: repeat_purchase_rate
+    label: Repeat Purchase Rate
+    description: Proportion of active customers (with at least one completed order) who have completed more than one order (order_rank > 1).
+    formula_display: "COUNT(DISTINCT CASE WHEN order_rank > 1 THEN customer_id END) * 1.0 / NULLIF(COUNT(DISTINCT customer_id), 0) WHERE order_status = 'completed'"
+    sql_expression: "COUNT(DISTINCT CASE WHEN fo.order_status = 'completed' AND fo.order_rank > 1 THEN fo.customer_id END) * 1.0 / NULLIF(COUNT(DISTINCT CASE WHEN fo.order_status = 'completed' THEN fo.customer_id END), 0)"
+    item_grain_sql_expression: "COUNT(DISTINCT CASE WHEN fo.order_status = 'completed' AND fo.order_rank > 1 THEN fo.customer_id END) * 1.0 / NULLIF(COUNT(DISTINCT CASE WHEN fo.order_status = 'completed' THEN fo.customer_id END), 0)"
+    format: percentage
+    grain: order
+    base_table: gold.fact_orders
+    mandatory_filters:
+      - "order_status = 'completed'"
+    allowed_dimensions:
+      - order_date
+      - product_category
+      - customer_segment
+      - region
+      - payment_method
+    caveats:
+      - "Uses lifetime completed order_rank per customer; cancelled and refunded orders are never counted toward repeat rank."
+      - "When sliced by time period, measures the share of active buyers in that period who are repeat buyers (order_rank > 1)."
+    synonyms:
+      - repeat purchase rate
+      - repeat rate
+      - tingkat pembelian ulang
+      - rasio pembelian berulang
+      - pelanggan berulang
+      - repeat buyer rate
+      - customer retention
+      - retensi pelanggan
+    owner: Growth & CRM
+
+  - key: refund_rate
+    label: Refund & Cancellation Rate
+    description: Share of total orders that ended in either refunded or cancelled status.
+    formula_display: "COUNT(DISTINCT CASE WHEN order_status IN ('refunded', 'cancelled') THEN order_id END) * 1.0 / NULLIF(COUNT(DISTINCT order_id), 0)"
+    sql_expression: "COUNT(DISTINCT CASE WHEN fo.order_status IN ('refunded', 'cancelled') THEN fo.order_id END) * 1.0 / NULLIF(COUNT(DISTINCT fo.order_id), 0)"
+    item_grain_sql_expression: "COUNT(DISTINCT CASE WHEN fo.order_status IN ('refunded', 'cancelled') THEN foi.order_id END) * 1.0 / NULLIF(COUNT(DISTINCT foi.order_id), 0)"
+    format: percentage
+    grain: order
+    base_table: gold.fact_orders
+    mandatory_filters: []
+    allowed_dimensions:
+      - order_date
+      - product_category
+      - customer_segment
+      - region
+      - payment_method
+    caveats:
+      - "Includes all order statuses (completed, cancelled, refunded) in the denominator."
+      - "Combines both refunded and cancelled orders in the numerator."
+    synonyms:
+      - refund rate
+      - cancellation rate
+      - refund and cancellation rate
+      - tingkat refund
+      - rasio refund
+      - tingkat pembatalan
+      - persentase refund
+      - persentase batal
+      - return rate
+    owner: Operations & Trust
+
+# ----------------------------------------------------------------------------
+# Official Governed Dimensions (5)
+# ----------------------------------------------------------------------------
+dimensions:
+  - key: order_date
+    label: Order Date
+    table: gold.dim_date
+    alias: dd
+    column: date_day
+    type: time
+    supported_grains:
+      - day
+      - week
+      - month
+      - quarter
+    grain_columns:
+      day: dd.date_day
+      week: dd.week_start
+      month: dd.month_start
+      quarter: dd.quarter_label
+    description: Order transaction date with governed calendar rollups (day, week, month, quarter).
+    synonyms:
+      - order date
+      - tanggal
+      - tanggal pesanan
+      - tanggal order
+      - waktu
+      - harian
+      - mingguan
+      - bulanan
+      - kuartal
+      - kuartalan
+      - tren
+      - trend
+      - daily
+      - weekly
+      - monthly
+      - quarterly
+    known_values: []
+
+  - key: product_category
+    label: Product Category
+    table: gold.dim_products
+    alias: dp
+    column: category_name
+    type: categorical
+    description: Top-level merchandise category from the product catalog.
+    synonyms:
+      - product category
+      - category
+      - kategori
+      - kategori produk
+      - jenis produk
+      - lini produk
+    known_values:
+      - Electronics
+      - Fashion
+      - Home & Living
+      - Beauty & Personal Care
+      - Groceries
+      - Sports & Outdoors
+
+  - key: customer_segment
+    label: Customer Segment
+    table: gold.dim_customers
+    alias: dc
+    column: customer_segment
+    type: categorical
+    description: Customer loyalty tier assigned in CRM.
+    synonyms:
+      - customer segment
+      - segment
+      - segmen
+      - segmen pelanggan
+      - tier pelanggan
+      - kelompok pelanggan
+    known_values:
+      - Regular
+      - Silver
+      - Gold
+      - Enterprise
+
+  - key: region
+    label: Region
+    table: gold.dim_customers
+    alias: dc
+    column: region
+    type: categorical
+    description: Indonesian geographic sales region of the customer.
+    synonyms:
+      - region
+      - wilayah
+      - daerah
+      - area
+      - lokasi
+      - provinsi
+    known_values:
+      - Jabodetabek
+      - Jawa Barat
+      - Jawa Tengah & DIY
+      - Jawa Timur
+      - Sumatera
+      - Kalimantan & Sulawesi
+
+  - key: payment_method
+    label: Payment Method
+    table: gold.fact_orders
+    alias: fo
+    column: payment_method
+    type: categorical
+    description: Checkout payment channel used for the order.
+    synonyms:
+      - payment method
+      - payment
+      - metode pembayaran
+      - pembayaran
+      - cara bayar
+      - channel pembayaran
+    known_values:
+      - QRIS
+      - Virtual Account
+      - Credit Card
+      - E-Wallet
+      - COD

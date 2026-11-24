@@ -1,0 +1,30 @@
+# Python virtual environment
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+
+# Local DuckDB & runtime data
+*.duckdb
+*.duckdb.wal
+*.sqlite
+*.sqlite3
+semantic_engine/data/
+
+# Environment variables
+.env
+.env.local
+
+# Frontend / Node
+node_modules/
+frontend/node_modules/
+frontend/dist/
+*.log
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
