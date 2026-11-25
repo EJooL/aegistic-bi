@@ -1,10 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { Menu } from 'lucide-react';
 import {
   fetchHealth,
   fetchDashboards,
   type HealthResponse,
   type ParserMode,
 } from './lib/api';
+import { AegisticLogo } from './components/AegisticLogo';
 import { LandingPage } from './components/LandingPage';
 import { Sidebar, type NavTab } from './components/Sidebar';
 import { QueryWorkspace } from './components/QueryWorkspace';
@@ -40,6 +42,7 @@ export const App: React.FC = () => {
   const [pinnedCount, setPinnedCount] = useState(0);
   const [queuedQuestion, setQueuedQuestion] = useState<string | null>(null);
   const [parserMode, setParserMode] = useState<ParserMode | ''>('');
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const navigate = useCallback((targetPath: string) => {
     const normalized = targetPath.startsWith('/') ? targetPath : `/${targetPath}`;
@@ -47,12 +50,14 @@ export const App: React.FC = () => {
       window.history.pushState({}, '', normalized);
     }
     setRoute(parseLocation());
+    setMobileNavOpen(false);
     window.scrollTo({ top: 0, behavior: 'auto' });
   }, []);
 
   useEffect(() => {
     const handlePopState = () => {
       setRoute(parseLocation());
+      setMobileNavOpen(false);
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
@@ -79,7 +84,7 @@ export const App: React.FC = () => {
       const data = await fetchDashboards();
       setPinnedCount(data.cards.length);
     } catch {
-      // Handled via sidebar health status
+      // Handled via sidebar health indicator
     }
   }, []);
 
@@ -113,11 +118,30 @@ export const App: React.FC = () => {
   }, []);
 
   if (route.page === 'landing') {
-    return <LandingPage onNavigate={navigate} />;
+    return (
+      <LandingPage
+        onNavigate={navigate}
+        onLaunchQuestion={handleAskQuestion}
+      />
+    );
   }
 
   return (
-    <div className="min-h-screen flex bg-[#FFFFFF] text-[#09090B]">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-[#FFFFFF] text-[#09090B]">
+      {/* Mobile Top Bar (< lg) — Obsidian Dark matching Sidebar */}
+      <div className="lg:hidden sticky top-0 z-30 h-[60px] px-4 bg-[#09090B] border-b border-[#27272A] flex items-center justify-between gap-3">
+        <AegisticLogo onClick={() => navigate('/')} size="sm" variant="dark" />
+        <button
+          type="button"
+          onClick={() => setMobileNavOpen(true)}
+          aria-label="Open workspace navigation"
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded border border-[#27272A] bg-[#141417] text-[13px] font-semibold text-[#FFFFFF] hover:border-[#5BC2F4] transition-colors duration-150"
+        >
+          <Menu className="w-4 h-4" />
+          <span>Menu</span>
+        </button>
+      </div>
+
       <Sidebar
         activeTab={route.view}
         onSelectTab={handleSelectTab}
@@ -129,6 +153,8 @@ export const App: React.FC = () => {
         pinnedCount={pinnedCount}
         parserMode={parserMode}
         onParserModeChange={setParserMode}
+        mobileOpen={mobileNavOpen}
+        onCloseMobile={() => setMobileNavOpen(false)}
       />
 
       <main className="flex-1 min-w-0 flex flex-col">

@@ -8,6 +8,7 @@ import {
   Database,
   ChevronUp,
   ChevronDown,
+  X,
 } from 'lucide-react';
 import type { HealthResponse, ParserMode } from '../lib/api';
 import { AegisticLogo } from './AegisticLogo';
@@ -25,6 +26,8 @@ interface SidebarProps {
   pinnedCount: number;
   parserMode: ParserMode | '';
   onParserModeChange: (mode: ParserMode | '') => void;
+  mobileOpen?: boolean;
+  onCloseMobile?: () => void;
 }
 
 const NAV_ITEMS: {
@@ -49,6 +52,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   pinnedCount,
   parserMode,
   onParserModeChange,
+  mobileOpen = false,
+  onCloseMobile,
 }) => {
   const [infoOpen, setInfoOpen] = useState(false);
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -64,26 +69,49 @@ export const Sidebar: React.FC<SidebarProps> = ({
         setInfoOpen(false);
       }
     };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setInfoOpen(false);
+      }
+    };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, [infoOpen]);
 
-  return (
-    <aside
-      className="w-[240px] shrink-0 h-screen sticky top-0 bg-[#FFFFFF] border-r border-[#E5E7EB] flex flex-col justify-between select-none"
-      aria-label="Workspace Navigation"
-    >
+  const handleNavClick = (id: NavTab) => {
+    onSelectTab(id);
+    onCloseMobile?.();
+  };
+
+  const sidebarContent = (
+    <>
       <div>
         {/* Clickable Brand Header -> Returns to / */}
-        <div className="px-5 h-[68px] border-b border-[#E5E7EB] flex items-center">
-          <AegisticLogo onClick={onNavigateHome} showSubtitle size="sm" />
+        <div className="px-5 h-[68px] border-b border-[#27272A] flex items-center justify-between gap-2">
+          <AegisticLogo
+            onClick={onNavigateHome}
+            showSubtitle
+            size="sm"
+            variant="dark"
+          />
+          {onCloseMobile && (
+            <button
+              type="button"
+              onClick={onCloseMobile}
+              aria-label="Close navigation menu"
+              className="lg:hidden p-1.5 rounded text-[#9CA3AF] hover:text-[#FFFFFF] hover:bg-[#141417] transition-colors duration-150"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
-        {/* Navigation Links */}
-        <nav className="py-4">
-          <div className="px-5 pb-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#4B5563]">
-            Workspace
-          </div>
+        {/* Workspace Navigation */}
+        <nav className="py-4" aria-label="Workspace Modules">
           <div className="space-y-0.5">
             {NAV_ITEMS.map((item) => {
               const Icon = item.icon;
@@ -99,11 +127,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => onSelectTab(item.id)}
-                  className={`relative w-full flex items-center justify-between pl-5 pr-4 py-2.5 text-left transition-colors focus:outline-none focus:bg-[#F7F8FA] ${
+                  onClick={() => handleNavClick(item.id)}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`relative w-full flex items-center justify-between pl-5 pr-4 py-2.5 text-left transition-colors duration-150 focus:outline-none focus-visible:bg-[#141417] ${
                     isActive
-                      ? 'bg-[#F7F8FA] text-[#09090B]'
-                      : 'text-[#4B5563] hover:bg-[#F7F8FA] hover:text-[#09090B]'
+                      ? 'bg-[#141417] text-[#FFFFFF]'
+                      : 'text-[#9CA3AF] hover:bg-[#141417] hover:text-[#FFFFFF]'
                   }`}
                 >
                   {isActive && (
@@ -115,19 +144,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <span className="flex items-center gap-2.5 min-w-0">
                     <Icon
                       className={`w-[16px] h-[16px] shrink-0 ${
-                        isActive ? 'text-[#09090B]' : 'text-[#4B5563]'
+                        isActive ? 'text-[#FFFFFF]' : 'text-[#9CA3AF]'
                       }`}
                     />
                     <span
-                      className={`text-[13.5px] truncate ${
-                        isActive ? 'font-bold text-[#09090B]' : 'font-medium'
+                      className={`text-[14px] truncate ${
+                        isActive ? 'font-bold text-[#FFFFFF]' : 'font-medium'
                       }`}
                     >
                       {item.label}
                     </span>
                   </span>
                   {count && (
-                    <span className="ml-2 text-[11.5px] font-semibold text-[#4B5563] tabular-nums">
+                    <span
+                      className={`ml-2 text-[12px] font-semibold tabular-nums ${
+                        isActive ? 'text-[#FFFFFF]' : 'text-[#9CA3AF]'
+                      }`}
+                    >
                       {count}
                     </span>
                   )}
@@ -138,19 +171,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </nav>
       </div>
 
-      {/* Compact Unobtrusive Engine Status + "Engine Info" Popover */}
-      <div className="relative p-3 border-t border-[#E5E7EB]" ref={popoverRef}>
+      {/* Compact Collapsible Engine Info Popover (Obsidian Dark Surface) */}
+      <div className="relative p-3.5 border-t border-[#27272A]" ref={popoverRef}>
         {infoOpen && (
-          <div className="absolute left-3 right-3 bottom-[60px] z-30 bg-[#FFFFFF] border border-[#BDC4D0] rounded-md p-3.5 space-y-3">
-            <div className="flex items-center justify-between border-b border-[#E5E7EB] pb-2">
-              <span className="text-[11.5px] font-semibold uppercase tracking-[0.06em] text-[#09090B]">
-                Engine Telemetry
+          <div className="absolute left-3.5 right-3.5 bottom-[62px] z-30 bg-[#141417] border border-[#27272A] rounded-md p-3.5 space-y-3 text-[#FFFFFF] animate-stage-fade">
+            <div className="flex items-center justify-between border-b border-[#27272A] pb-2">
+              <span className="text-[12.5px] font-bold text-[#FFFFFF]">
+                Engine status
               </span>
               <button
                 type="button"
                 onClick={onRefreshHealth}
                 title="Refresh backend health"
-                className="p-1 rounded text-[#4B5563] hover:text-[#09090B] hover:bg-[#F7F8FA] transition-colors"
+                aria-label="Refresh backend health"
+                className="p-1 rounded text-[#9CA3AF] hover:text-[#FFFFFF] hover:bg-[#27272A] transition-colors duration-150"
               >
                 <RefreshCw
                   className={`w-3.5 h-3.5 ${healthLoading ? 'animate-spin' : ''}`}
@@ -159,51 +193,51 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
 
             {isOnline && health ? (
-              <div className="space-y-2 text-[12px]">
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5 text-[#4B5563]">
-                    <Database className="w-3.5 h-3.5 text-[#5BC2F4]" />
+              <div className="space-y-2 text-[12.5px]">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-1.5 text-[#9CA3AF]">
+                    <Database className="w-3.5 h-3.5 text-[#5BC2F4] shrink-0" />
                     DuckDB Gold
                   </span>
-                  <span className="font-semibold text-[#09090B] tabular-nums">
+                  <span className="font-semibold text-[#FFFFFF] tabular-nums">
                     {health.gold_tables?.length ?? 0} tables
                   </span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[#4B5563]">Semantic Contract</span>
-                  <span className="font-semibold text-[#09090B] tabular-nums">
-                    {health.metrics_loaded}M · {health.dimensions_loaded}D
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[#9CA3AF]">Semantic model</span>
+                  <span className="font-semibold text-[#FFFFFF] tabular-nums">
+                    {health.metrics_loaded} metrics · {health.dimensions_loaded} dims
                   </span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[#4B5563]">Server Parser</span>
-                  <span className="font-semibold text-[#09090B] capitalize">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[#9CA3AF]">Server parser</span>
+                  <span className="font-semibold text-[#FFFFFF] capitalize">
                     {health.parser_mode}
                   </span>
                 </div>
               </div>
             ) : (
-              <p className="text-[12px] text-[#FF0F5B] leading-snug">
+              <p className="text-[12.5px] text-[#FF0F5B] leading-snug">
                 {healthError
                   ? `API unreachable: ${healthError}`
                   : 'FastAPI offline on localhost:8000.'}
               </p>
             )}
 
-            <div className="pt-2 border-t border-[#E5E7EB] space-y-1.5">
+            <div className="pt-2.5 border-t border-[#27272A] space-y-1.5">
               <label
                 htmlFor="sidebar-parser-mode"
-                className="block text-[11px] font-semibold text-[#4B5563]"
+                className="block text-[12px] font-semibold text-[#9CA3AF]"
               >
-                Query Parser Override
+                Parser override
               </label>
               <select
                 id="sidebar-parser-mode"
                 value={parserMode}
                 onChange={(e) => onParserModeChange(e.target.value as ParserMode | '')}
-                className="w-full text-[12px] font-medium text-[#09090B] bg-[#F7F8FA] border border-[#BDC4D0] rounded px-2 py-1.5 focus:outline-none focus:border-[#09090B]"
+                className="w-full text-[12.5px] font-medium text-[#FFFFFF] bg-[#09090B] border border-[#27272A] rounded px-2.5 py-1.5 focus:outline-none focus:border-[#5BC2F4]"
               >
-                <option value="">Server Default</option>
+                <option value="">Server default</option>
                 <option value="deterministic">Deterministic</option>
                 <option value="openai">OpenAI</option>
                 <option value="gemini">Gemini</option>
@@ -215,29 +249,66 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <button
           type="button"
           onClick={() => setInfoOpen((prev) => !prev)}
-          className="w-full flex items-center justify-between px-2.5 py-2 rounded border border-[#E5E7EB] bg-[#FFFFFF] hover:bg-[#F7F8FA] transition-colors text-left focus:outline-none focus:border-[#09090B]"
+          aria-expanded={infoOpen}
+          className="w-full flex items-center justify-between px-3 py-2 rounded border border-[#27272A] bg-[#141417] hover:border-[#4B5563] transition-colors duration-150 text-left focus:outline-none focus-visible:border-[#5BC2F4]"
         >
           <span className="flex items-center gap-2 min-w-0">
             <span
               className={`w-2 h-2 rounded-full shrink-0 ${
                 healthLoading
-                  ? 'bg-[#5BC2F4] animate-pulse'
+                  ? 'bg-[#5BC2F4]'
                   : isOnline
                     ? 'bg-[#5BC2F4]'
                     : 'bg-[#FF0F5B]'
               }`}
+              aria-hidden="true"
             />
-            <span className="text-[12px] font-semibold text-[#09090B] truncate">
+            <span className="text-[13px] font-semibold text-[#FFFFFF] truncate">
               {healthLoading ? 'Checking...' : isOnline ? 'Engine Info' : 'Engine Offline'}
             </span>
           </span>
           {infoOpen ? (
-            <ChevronDown className="w-3.5 h-3.5 text-[#4B5563] shrink-0" />
+            <ChevronDown className="w-3.5 h-3.5 text-[#9CA3AF] shrink-0" />
           ) : (
-            <ChevronUp className="w-3.5 h-3.5 text-[#4B5563] shrink-0" />
+            <ChevronUp className="w-3.5 h-3.5 text-[#9CA3AF] shrink-0" />
           )}
         </button>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop Sticky Deep Obsidian Sidebar */}
+      <aside
+        className="hidden lg:flex w-[244px] shrink-0 h-screen sticky top-0 bg-[#09090B] text-[#FFFFFF] border-r border-[#27272A] flex-col justify-between select-none"
+        aria-label="Workspace Navigation"
+      >
+        {sidebarContent}
+      </aside>
+
+      {/* Mobile Slide-In Deep Obsidian Sidebar Drawer */}
+      <div
+        className={`lg:hidden fixed inset-0 z-40 transition-opacity duration-200 ease-swiss ${
+          mobileOpen
+            ? 'opacity-100 pointer-events-auto'
+            : 'opacity-0 pointer-events-none'
+        }`}
+        aria-hidden={!mobileOpen}
+      >
+        <div
+          className="absolute inset-0 bg-[#09090B]/50"
+          onClick={onCloseMobile}
+        />
+        <aside
+          className={`relative w-[264px] max-w-[82vw] h-full bg-[#09090B] text-[#FFFFFF] border-r border-[#27272A] flex flex-col justify-between select-none transition-transform duration-200 ease-swiss ${
+            mobileOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
+          aria-label="Mobile Workspace Navigation"
+        >
+          {sidebarContent}
+        </aside>
+      </div>
+    </>
   );
 };

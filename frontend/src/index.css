@@ -8,7 +8,7 @@
   html,
   body,
   #root {
-    height: 100%;
+    min-height: 100%;
     margin: 0;
     padding: 0;
     background-color: var(--color-canvas);
@@ -24,7 +24,7 @@
   h4 {
     color: var(--color-text-primary);
     font-family: var(--font-display);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.025em;
   }
 
   pre,
@@ -42,20 +42,35 @@
     color: var(--color-text-primary);
     font-family: var(--font-display);
     font-variant-numeric: tabular-nums;
-    letter-spacing: -0.03em;
+    letter-spacing: -0.035em;
+  }
+
+  .dot-grid-canvas {
+    background-color: var(--color-surface-grid);
+    background-image: radial-gradient(#D1D5DB 1px, transparent 1px);
+    background-size: 16px 16px;
   }
 
   .sql-code-block {
     background-color: var(--color-subtle);
-    border: 1px solid var(--color-border-strong);
+    border: 1px solid var(--color-border-subtle);
     color: var(--color-text-primary);
     font-family: var(--font-code);
-    font-size: 12px;
+    font-size: 12.5px;
+    line-height: 1.65;
+  }
+
+  .sql-code-block-dark {
+    background-color: var(--color-obsidian-surface);
+    border: 1px solid var(--color-obsidian-border);
+    color: #F9FAFB;
+    font-family: var(--font-code);
+    font-size: 12.5px;
     line-height: 1.65;
   }
 }
 
-/* Lightweight Swiss Micro-Animations */
+/* Calibrated Swiss Micro-Animations */
 @keyframes dashFlow {
   from {
     stroke-dashoffset: 16;
@@ -68,7 +83,7 @@
 @keyframes stageFadeIn {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(5px);
   }
   to {
     opacity: 1;
@@ -85,12 +100,27 @@
   }
 }
 
+@keyframes pulseRing {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.7;
+  }
+  70% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+
 .animate-dash-flow {
   animation: dashFlow 0.9s linear infinite;
 }
 
 .animate-stage-fade {
-  animation: stageFadeIn 280ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: stageFadeIn 220ms var(--ease-swiss) forwards;
 }
 
 .animate-tab-progress {
@@ -98,10 +128,31 @@
   animation: tabProgress 5500ms linear forwards;
 }
 
-/* Crisp Swiss scrollbars */
+.animate-live-ring {
+  animation: pulseRing 2.2s var(--ease-swiss) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-dash-flow,
+  .animate-stage-fade,
+  .animate-tab-progress,
+  .animate-live-ring,
+  .animate-pulse,
+  .animate-ping,
+  .animate-spin {
+    animation: none !important;
+  }
+
+  * {
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Crisp Minimal Scrollbars */
 ::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {

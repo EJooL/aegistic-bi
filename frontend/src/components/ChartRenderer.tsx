@@ -42,6 +42,7 @@ interface CustomTooltipProps {
   label?: string | number;
   payload?: CustomTooltipPayloadItem[];
   formatByKey: Record<string, ValueFormat>;
+  partialLabel?: string | null;
 }
 
 const CustomChartTooltip: React.FC<CustomTooltipProps> = ({
@@ -49,17 +50,27 @@ const CustomChartTooltip: React.FC<CustomTooltipProps> = ({
   label,
   payload,
   formatByKey,
+  partialLabel,
 }) => {
   if (!active || !payload || payload.length === 0) return null;
+  const isPartialPoint = Boolean(partialLabel && String(label) === partialLabel);
 
   return (
-    <div className="bg-[#FFFFFF] border border-[#09090B] rounded px-3.5 py-2.5">
+    <div className="bg-[#FFFFFF] border border-[#09090B] rounded px-3.5 py-2.5 min-w-[180px]">
       {label !== undefined && label !== null && (
-        <div className="text-[12px] font-bold text-[#09090B] pb-1.5 mb-1.5 border-b border-[#E5E7EB]">
-          {String(label)}
+        <div className="flex items-center justify-between gap-3 pb-1.5 mb-1.5 border-b border-[#E5E7EB]">
+          <span className="text-[12.5px] font-bold text-[#09090B] tabular-nums">
+            {String(label)}
+          </span>
+          {isPartialPoint && (
+            <span className="inline-flex items-center gap-1 text-[11.5px] font-semibold text-[#FF0F5B]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#FF0F5B]" />
+              Open month
+            </span>
+          )}
         </div>
       )}
-      <div className="space-y-1">
+      <div className="space-y-1.5">
         {payload.map((entry, idx) => {
           const dataKey = String(entry.dataKey ?? '');
           const fmt = formatByKey[dataKey] ?? 'decimal';
@@ -70,7 +81,7 @@ const CustomChartTooltip: React.FC<CustomTooltipProps> = ({
             >
               <span className="flex items-center gap-2 text-[#4B5563]">
                 <span
-                  className="w-2 h-2 shrink-0"
+                  className="w-2 h-2 shrink-0 rounded-[1px]"
                   style={{ backgroundColor: entry.color ?? '#5BC2F4' }}
                 />
                 <span>{entry.name}</span>
@@ -114,8 +125,8 @@ const renderSeriesDot = ({
         <circle
           cx={cx}
           cy={cy}
-          r={8.5}
-          fill="none"
+          r={9}
+          fill="#FFF5F8"
           stroke="#FF0F5B"
           strokeWidth={1.5}
           strokeDasharray="3 2"
@@ -123,10 +134,10 @@ const renderSeriesDot = ({
         <circle
           cx={cx}
           cy={cy}
-          r={4.5}
+          r={4.2}
           fill="#FFFFFF"
           stroke="#FF0F5B"
-          strokeWidth={2}
+          strokeWidth={2.2}
         />
       </g>
     );
@@ -145,8 +156,8 @@ const renderSeriesDot = ({
   );
 };
 
-// Always map series strictly to the locked Swiss Geometric palette:
-// Primary #5BC2F4, Secondary #67689E, Anomaly/Refund highlight #FF0F5B.
+// Map chart series strictly to locked Swiss tokens:
+// Primary #5BC2F4, Secondary #67689E, Anomaly/Refund/Alert #FF0F5B.
 function resolveSwissSeriesColor(index: number, key: string): string {
   const lower = key.toLowerCase();
   if (lower.includes('refund') || lower.includes('cancel') || lower.includes('error')) {
@@ -161,6 +172,13 @@ function getFormatFamily(fmt: ValueFormat): string {
   return 'number';
 }
 
+const AXIS_TICK_STYLE = {
+  fill: '#4B5563',
+  fontSize: 12,
+  fontFamily: 'Plus Jakarta Sans, sans-serif',
+  fontVariantNumeric: 'tabular-nums',
+};
+
 export const ChartRenderer: React.FC<ChartRendererProps> = ({
   chartSpec,
   columns,
@@ -170,7 +188,7 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({
 }) => {
   if (!data || data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-44 rounded border border-dashed border-[#BDC4D0] bg-[#F7F8FA] text-[13px] text-[#4B5563]">
+      <div className="flex items-center justify-center h-44 rounded border border-dashed border-[#BDC4D0] bg-[#F7F8FA] text-[13.5px] text-[#4B5563]">
         No data rows returned for this query.
       </div>
     );
@@ -230,7 +248,7 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({
               className="border-t-2 pt-4 pb-2 flex flex-col justify-between bg-[#FFFFFF]"
               style={{ borderTopColor: accent }}
             >
-              <div className="text-[12px] font-semibold uppercase tracking-[0.05em] text-[#4B5563] mb-2">
+              <div className="text-[13px] font-semibold text-[#4B5563] mb-2">
                 {m.label}
               </div>
               <div
@@ -241,7 +259,7 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({
                 {primaryText}
               </div>
               {fullPrecision && (
-                <div className="mt-2 text-[12px] font-medium text-[#4B5563] tabular-nums">
+                <div className="mt-2 text-[12.5px] font-medium text-[#4B5563] tabular-nums">
                   {fullPrecision}
                 </div>
               )}
@@ -278,7 +296,7 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({
                 return (
                   <th
                     key={col.key}
-                    className={`px-3.5 py-2.5 text-[11.5px] font-semibold uppercase tracking-[0.05em] text-[#4B5563] whitespace-nowrap ${
+                    className={`px-3.5 py-2.5 text-[12.5px] font-semibold text-[#4B5563] whitespace-nowrap ${
                       numeric ? 'text-right' : 'text-left'
                     }`}
                   >
@@ -290,13 +308,13 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({
           </thead>
           <tbody className="divide-y divide-[#E5E7EB] bg-[#FFFFFF]">
             {rowsToRender.map((row, rIdx) => (
-              <tr key={rIdx} className="hover:bg-[#F7F8FA] transition-colors">
+              <tr key={rIdx} className="hover:bg-[#F7F8FA] transition-colors duration-150">
                 {visibleCols.map((col) => {
                   const numeric = col.is_metric || isNumericFormat(col.format);
                   return (
                     <td
                       key={col.key}
-                      className={`px-3.5 py-2.5 text-[13px] whitespace-nowrap ${
+                      className={`px-3.5 py-2.5 text-[13.5px] whitespace-nowrap ${
                         numeric
                           ? 'text-right font-semibold text-[#09090B] tabular-nums'
                           : 'text-left text-[#09090B]'
@@ -315,10 +333,10 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({
   }
 
   // -------------------------------------------------------------------------
-  // 3. Recharts Line & Bar Charts (Swiss Geometric Palette on #FFFFFF)
+  // 3. Recharts Line & Bar Charts (Swiss Flat Palette on #FFFFFF)
   // -------------------------------------------------------------------------
   const xKey = chartSpec.x_key;
-  const chartHeight = compact ? 235 : 330;
+  const chartHeight = compact ? 240 : 340;
 
   const primaryFamily = getFormatFamily(yKeys[0].format);
   const secondarySeries = yKeys.find(
@@ -339,6 +357,8 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({
   });
 
   const lastIndex = chartData.length - 1;
+  const lastXLabel =
+    hasPartialPeriod && lastIndex >= 0 ? String(chartData[lastIndex][xKey]) : null;
 
   if (effectiveType === 'line') {
     return (
@@ -348,7 +368,7 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({
             data={chartData}
             margin={{
               top: 14,
-              right: hasDualAxis ? 18 : 20,
+              right: hasDualAxis ? 18 : 22,
               left: 8,
               bottom: 6,
             }}
@@ -356,39 +376,49 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({
             <CartesianGrid stroke="#E5E7EB" vertical={false} />
             <XAxis
               dataKey={xKey}
-              tick={{ fill: '#4B5563', fontSize: 11.5 }}
+              tick={AXIS_TICK_STYLE}
               tickLine={{ stroke: '#BDC4D0' }}
               axisLine={{ stroke: '#BDC4D0' }}
-              minTickGap={20}
+              minTickGap={22}
             />
             <YAxis
               yAxisId="left"
-              tick={{ fill: '#4B5563', fontSize: 11.5 }}
+              tick={AXIS_TICK_STYLE}
               tickLine={false}
               axisLine={false}
-              width={78}
+              width={82}
               tickFormatter={(v: number) => formatAxisTick(v, yKeys[0].format)}
             />
             {hasDualAxis && secondarySeries && (
               <YAxis
                 yAxisId="right"
                 orientation="right"
-                tick={{ fill: '#4B5563', fontSize: 11.5 }}
+                tick={AXIS_TICK_STYLE}
                 tickLine={false}
                 axisLine={false}
-                width={52}
+                width={54}
                 tickFormatter={(v: number) =>
                   formatAxisTick(v, secondarySeries.format)
                 }
               />
             )}
             <Tooltip
-              content={<CustomChartTooltip formatByKey={formatByKey} />}
+              content={
+                <CustomChartTooltip
+                  formatByKey={formatByKey}
+                  partialLabel={lastXLabel}
+                />
+              }
               cursor={{ stroke: '#BDC4D0', strokeWidth: 1 }}
             />
             {yKeys.length > 1 && (
               <Legend
-                wrapperStyle={{ fontSize: 12, color: '#09090B', paddingTop: 10 }}
+                wrapperStyle={{
+                  fontSize: 12.5,
+                  color: '#09090B',
+                  paddingTop: 10,
+                  fontFamily: 'Plus Jakarta Sans, sans-serif',
+                }}
               />
             )}
             {yKeys.map((series, idx) => {
@@ -441,30 +471,30 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({
           <CartesianGrid stroke="#E5E7EB" vertical={false} />
           <XAxis
             dataKey={xKey}
-            tick={{ fill: '#4B5563', fontSize: 11.5 }}
+            tick={AXIS_TICK_STYLE}
             tickLine={{ stroke: '#BDC4D0' }}
             axisLine={{ stroke: '#BDC4D0' }}
             interval={0}
-            angle={chartData.length > 6 ? -20 : 0}
+            angle={chartData.length > 6 ? -18 : 0}
             textAnchor={chartData.length > 6 ? 'end' : 'middle'}
             height={chartData.length > 6 ? 54 : 30}
           />
           <YAxis
             yAxisId="left"
-            tick={{ fill: '#4B5563', fontSize: 11.5 }}
+            tick={AXIS_TICK_STYLE}
             tickLine={false}
             axisLine={false}
-            width={78}
+            width={82}
             tickFormatter={(v: number) => formatAxisTick(v, yKeys[0].format)}
           />
           {hasDualAxis && secondarySeries && (
             <YAxis
               yAxisId="right"
               orientation="right"
-              tick={{ fill: '#4B5563', fontSize: 11.5 }}
+              tick={AXIS_TICK_STYLE}
               tickLine={false}
               axisLine={false}
-              width={52}
+              width={54}
               tickFormatter={(v: number) => formatAxisTick(v, secondarySeries.format)}
             />
           )}
@@ -474,7 +504,12 @@ export const ChartRenderer: React.FC<ChartRendererProps> = ({
           />
           {yKeys.length > 1 && (
             <Legend
-              wrapperStyle={{ fontSize: 12, color: '#09090B', paddingTop: 10 }}
+              wrapperStyle={{
+                fontSize: 12.5,
+                color: '#09090B',
+                paddingTop: 10,
+                fontFamily: 'Plus Jakarta Sans, sans-serif',
+              }}
             />
           )}
           {yKeys.map((series, idx) => {

@@ -7,9 +7,15 @@ const config: Config = {
       colors: {
         canvas: '#FFFFFF',
         subtle: '#F7F8FA',
+        gridbg: '#F9FAFB',
         ink: {
           DEFAULT: '#09090B',
           secondary: '#4B5563',
+        },
+        obsidian: {
+          DEFAULT: '#09090B',
+          surface: '#141417',
+          border: '#27272A',
         },
         cta: {
           DEFAULT: '#FF0F5B',
@@ -31,14 +37,12 @@ const config: Config = {
         display: [
           'Space Grotesk',
           'Plus Jakarta Sans',
-          'Inter',
           'ui-sans-serif',
           'system-ui',
           'sans-serif',
         ],
         sans: [
           'Plus Jakarta Sans',
-          'Inter',
           'ui-sans-serif',
           'system-ui',
           '-apple-system',
@@ -53,6 +57,9 @@ const config: Config = {
           'Consolas',
           'monospace',
         ],
+      },
+      transitionTimingFunction: {
+        swiss: 'cubic-bezier(0.22, 1, 0.36, 1)',
       },
     },
   },

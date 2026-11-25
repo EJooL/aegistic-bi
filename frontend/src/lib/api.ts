@@ -609,3 +609,72 @@ export function hasPartialPeriodWarning(
   if (!warnings || warnings.length === 0) return false;
   return warnings.some((w) => formatEditorialWarning(w).isPartialPeriod);
 }
+
+// ---------------------------------------------------------------------------
+// Human-Readable Label Formatters (Zero raw internal enum codes in UI)
+// ---------------------------------------------------------------------------
+const GUARDRAIL_CHECK_LABELS: Record<string, string> = {
+  read_only_ast: 'Read-only SQL AST',
+  gold_schema_only: 'Gold schema isolation',
+  no_cross_join: 'No Cartesian joins',
+  row_limit_enforced: 'Row limit cap',
+};
+
+const SANITY_CHECK_LABELS: Record<string, string> = {
+  partial_period_check: 'Partial period check',
+  missing_dates_check: 'Date continuity check',
+  null_ratio_check: 'Null completeness check',
+  empty_result_check: 'Non-empty result check',
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  verified: 'Verified',
+  executed: 'Executed',
+  guardrail_blocked: 'Guardrail blocked',
+  clarification_required: 'Clarification required',
+  refused: 'Safely refused',
+  error: 'Execution error',
+};
+
+const ERROR_TYPE_LABELS: Record<string, string> = {
+  definition_error: 'Definition error',
+  fanout_error: 'Join fan-out error',
+  hallucination: 'Metric hallucination',
+  unsafe_execution: 'Unsafe SQL executed',
+  false_answer: 'False answer',
+  schema_leak: 'Raw schema access',
+  wrong_metric: 'Wrong metric',
+  missing_filter: 'Missing mandatory filter',
+  sql_error: 'SQL syntax error',
+};
+
+export function humanizeIdentifier(raw: string): string {
+  const cleaned = (raw || '').trim();
+  if (!cleaned) return '';
+  return cleaned
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+export function formatGuardrailName(name: string): string {
+  const key = (name || '').toLowerCase();
+  return GUARDRAIL_CHECK_LABELS[key] ?? humanizeIdentifier(name);
+}
+
+export function formatSanityCheckName(name: string): string {
+  const key = (name || '').toLowerCase();
+  return SANITY_CHECK_LABELS[key] ?? humanizeIdentifier(name);
+}
+
+export function formatStatusLabel(status: string): string {
+  const key = (status || '').toLowerCase();
+  return STATUS_LABELS[key] ?? humanizeIdentifier(status);
+}
+
+export function formatErrorTypeLabel(errorType: string | null): string | null {
+  if (!errorType) return null;
+  const key = errorType.toLowerCase();
+  return ERROR_TYPE_LABELS[key] ?? humanizeIdentifier(errorType);
+}
+

@@ -1,45 +1,55 @@
-/* Aegistic Design System — Swiss Geometric Editorial Modern
- * Strict locked hex palette: flat surfaces, high-contrast sans typography, vibrant pink CTAs.
+/* Aegistic Design System
+ * Swiss Geometric Editorial Modern — Strict Locked Hex Palette
  */
 
 :root {
-  /* Dominant Canvas & Subtle Technical Surface */
+  /* Dominant Canvas & Subtle Technical Surfaces */
   --color-canvas: #FFFFFF;
   --color-subtle: #F7F8FA;
+  --color-surface-grid: #F9FAFB;
+  --color-alert-tint: #FFF5F8;
+
+  /* High-Contrast Technical & Security Surface (Deep Obsidian) */
+  --color-obsidian: #09090B;
+  --color-obsidian-surface: #141417;
+  --color-obsidian-border: #27272A;
 
   /* Typography Hierarchy */
   --color-text-primary: #09090B;
   --color-text-secondary: #4B5563;
 
-  /* Primary Brand Accent & Solid CTAs (Vibrant Crimson Pink) */
+  /* Primary Brand Accent & Solid CTAs */
   --color-accent: #FF0F5B;
   --color-cta: #FF0F5B;
   --color-cta-hover: #DC0A4D;
   --color-cta-active: #BE0842;
 
-  /* Primary Data Viz & Verified Accent (Bright Sky Blue) */
+  /* Primary Data Visualization & Verified State */
   --color-sky: #5BC2F4;
 
-  /* Secondary / Supporting Series & Tags (Slate Indigo) */
+  /* Secondary Supporting Series & Accents */
   --color-secondary: #67689E;
 
-  /* Structural Borders & Gridlines (Never used for body copy) */
+  /* Structural Hairline Borders & Gridlines */
   --color-border-strong: #BDC4D0;
   --color-border-subtle: #E5E7EB;
 
-  /* Multi-Series Data Viz Scale */
+  /* Multi-Series Data Visualization Scale */
   --color-series-1: #5BC2F4;
   --color-series-2: #67689E;
   --color-series-3: #FF0F5B;
   --color-series-4: #09090B;
   --color-series-5: #BDC4D0;
 
-  /* Font Families */
-  --font-display: 'Space Grotesk', 'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, sans-serif;
-  --font-sans: 'Plus Jakarta Sans', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* Typography */
+  --font-display: 'Space Grotesk', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-code: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
+  /* Motion */
+  --ease-swiss: cubic-bezier(0.22, 1, 0.36, 1);
+
   /* Layout Dimensions */
-  --sidebar-width: 240px;
-  --audit-drawer-width: 400px;
+  --sidebar-width: 244px;
+  --audit-drawer-width: 416px;
 }
